@@ -16,6 +16,7 @@ Local Notation "C '^op'" := (opp_precat C) (at level 3, format "C ^op").
 Section functor_op.
 
 Variable C D : precategory.
+Hypothesis hsD : has_homsets D.
 Variable F : functor C D.
 
 Definition functor_op_data : functor_data C^op D^op :=
@@ -27,7 +28,79 @@ Proof. split; intros; [ apply (functor_id F) | apply (functor_comp F) ]. Qed.
 
 Definition functor_op : functor C^op D^op := tpair _ _ is_functor_functor_op.
 
+Lemma has_homsets_op (hsC : has_homsets C) : has_homsets C^op.
+Proof. intros a b; apply hsC. Qed.
+
+(* Lemmas for definition CAT *)
+Lemma functor_identity_left : functor_composite C C D (functor_identity C) F = F.
+Proof.
+apply (functor_eq _ _ hsD); case F; clear F; intros F; case F; trivial.
+Qed.
+
+Lemma functor_identity_right : functor_composite C D D F (functor_identity D) = F.
+Proof.
+apply (functor_eq _ _ hsD); case F; clear F; intros F; case F; trivial.
+Qed.
+
 End functor_op.
+
+Section functor_eqs.
+  
+Variable C : precategory.
+Variable hsC : has_homsets C.
+
+Local Notation "c / x" := (slice_precat c x hsC).
+
+Lemma functor_op_identity : functor_op _ _ (functor_identity C) = functor_identity C^op.
+Proof.
+apply (functor_eq _ _ (has_homsets_op _ hsC)); trivial.
+Qed.
+
+Lemma slicecat_functor_ob_identity (x : C) :
+  slicecat_functor_ob C hsC x x (identity x) = functor_identity (C / x).
+Proof.
+unfold slicecat_functor_ob.
+apply funextsec.
+intro af.
+rewrite id_right.
+case af; clear af; simpl; intros a f.
+trivial.
+(* apply (total2_paths2 (idpath _)); trivial. *)
+Defined.
+
+Lemma slicecat_functor_identity (x : C) :
+  slicecat_functor _ _ _ _ (identity x) = functor_identity (C / x).
+Proof.
+apply (functor_eq _ _ (has_homsets_slice_precat _ _ _)); simpl.
+apply (total2_paths2 (slicecat_functor_ob_identity _)).
+apply funextsec; intro a.
+case a; clear a; intros a f.
+apply funextsec; intro b.
+case b; clear b; intros b g.
+apply funextsec; intro h.
+case h; clear h; intros h hh.
+rewrite transport_of_functor_map_is_pointwise.
+simpl in *.
+unfold slicecat_mor.
+rewrite transportf_total2.
+apply total2_paths2_second_isaprop.
+rewrite transportf_total2.
+unfold slicecat_functor_ob.
+simpl.
+unfold slicecat_functor_ob_identity.
+simpl.
+rewrite toforallpaths_funextsec.
+simpl.
+unfold uu0a.internal_paths_rew_r.
+simpl.
+case (id_right C a x f).
+case (id_right C b x g).
+simpl.
+apply idpath.
+apply hsC.
+Qed.
+
+End functor_eqs.
 
 (* Define the "V-precategory" and V valued presheafs *)
 Section Vcat.
@@ -40,7 +113,8 @@ Variable idV : V -> V.
 Hypothesis id_funV : forall a, eps (idV a) (funV a a).
 
 Variable compV : V -> V -> V.
-Hypothesis comp_funV : forall b a c f g, eps f (funV a b) -> eps g (funV b c) -> eps (compV f g) (funV a c).
+Hypothesis comp_funV : forall b a c f g,
+                         eps f (funV a b) -> eps g (funV b c) -> eps (compV f g) (funV a c).
 
 (* Should these rules be untyped? *)
 Hypothesis id_leftV : forall a f, compV (idV a) f = f.
@@ -69,8 +143,8 @@ Definition Vcat_ob_mor : precategory_ob_mor :=
 Definition Vcat_precategory_data : precategory_data :=
    (precategory_data_pair Vcat_ob_mor
       (fun x => tpair _ (idV x) (id_funV x))
-      (fun x y z f g => tpair (fun b => eps b (funV x z)) _ (comp_funV y x z (pr1 f) (pr1 g) (pr2 f) (pr2 g))) ).
-
+      (fun x y z f g => tpair (fun b => eps b (funV x z)) _
+                              (comp_funV _ _ _ _ _ (pr2 f) (pr2 g)))).
 
 Lemma is_precategory_Vcat_precategory_data :
   is_precategory Vcat_precategory_data.
@@ -117,14 +191,12 @@ Variable hsC : has_homsets C.
 
 Local Notation "c / x" := (slice_precat c x hsC).
 
-Lemma has_homsets_opp_precat : has_homsets C^op.
-Proof. intros a b; apply hsC. Qed.
-
 Definition U_fun (x : C^op) : HSET := 
   tpair _ (Vpresheaf (C / x)) (isaset_Vpresheaf (C / x)).
 
 Definition U_func (x y : C) (f : y --> x) (F : functor (C / x)^op Vcat) :
-  functor (C / y)^op Vcat := functor_composite _ _ _ (functor_op _ _ (slicecat_functor C hsC y x f)) F.
+  functor (C / y)^op Vcat :=
+    functor_composite _ _ _ (functor_op _ _ (slicecat_functor C hsC y x f)) F.
 
 Definition U_functor_data : functor_data C^op HSET :=
  tpair (fun F : C^op -> HSET => forall a b, a --> b -> F a --> F b) U_fun
@@ -136,15 +208,21 @@ split.
 intro a.
 simpl.
 apply funextfun; intro F.
+unfold identity; simpl.
+unfold U_func; simpl.
+rewrite slicecat_functor_identity.
+rewrite functor_op_identity.
+simpl.
+rewrite (functor_identity_left (C / a)^op Vcat (has_homsets_Vcat)).
+apply idpath.
+apply has_homsets_slice_precat.
 Admitted.
 
 Definition U : functor C^op HSET := tpair _ _ is_functor_U_functor.
 
-
 End Vcat.
 
 Notation Vcat := Vcat_precategory.
-
 
 
 (*  -we define a special presheaf U taking U(X) to be the set of V-valued presheaves *)
@@ -154,34 +232,34 @@ Notation Vcat := Vcat_precategory.
 (* and one element  in F(X,1_X) *)
 
 (*  -we prove that p : \tilde{U} -> U is a universe in the category of presheaves *)
-Section test.
+(* Section test. *)
 
-Variable V : hSet.
-Variable eps : V -> V -> hProp.
-(* Variable El : V -> hSet. *)
+(* Variable V : hSet. *)
+(* Variable eps : V -> V -> hProp. *)
+(* (* Variable El : V -> hSet. *) *)
 
-Variable C : precategory.
-Variable hsC : has_homsets C.
+(* Variable C : precategory. *)
+(* Variable hsC : has_homsets C. *)
 
-Local Notation "c / x" := (slice_precat c x hsC).
+(* Local Notation "c / x" := (slice_precat c x hsC). *)
 
-Lemma has_homsets_opp_precat : has_homsets C^op.
-Proof. intros a b; apply hsC. Qed.
-Check Vpresheaf.
-Definition U_fun (x : C^op) : HSET := 
-  tpair _ (Vpresheaf V eps (C / x)) (isaset_Vpresheaf V eps _).
+(* Lemma has_homsets_opp_precat : has_homsets C^op. *)
+(* Proof. intros a b; apply hsC. Qed. *)
 
-Definition U_func (x y : C) (f : y --> x) (F : functor (C / x)^op (Vcat V El)) :
-  functor (C / y)^op (Vcat V El) := functor_composite _ _ _ (functor_op _ _ (slicecat_functor C hsC y x f)) F.
+(* Definition U_fun (x : C^op) : HSET :=  *)
+(*   tpair _ (Vpresheaf V eps (C / x)) (isaset_Vpresheaf V eps _). *)
 
-Definition U_functor_data : functor_data C^op HSET :=
- tpair (fun F : C^op -> HSET => forall a b, a --> b -> F a --> F b) U_fun
-       (fun (a b : C^op) (f : a --> b) (H : Vpresheaf V El (C / a)) => U_func a b f H).
+(* Definition U_func (x y : C) (f : y --> x) (F : functor (C / x)^op (Vcat V El)) : *)
+(*   functor (C / y)^op (Vcat V El) := functor_composite _ _ _ (functor_op _ _ (slicecat_functor C hsC y x f)) F. *)
 
-(* Is this true? *)
-Lemma is_functor_U_functor : is_functor U_functor_data.
-Admitted.
+(* Definition U_functor_data : functor_data C^op HSET := *)
+(*  tpair (fun F : C^op -> HSET => forall a b, a --> b -> F a --> F b) U_fun *)
+(*        (fun (a b : C^op) (f : a --> b) (H : Vpresheaf V El (C / a)) => U_func a b f H). *)
 
-Definition U : functor C^op HSET := tpair _ _ is_functor_U_functor.
+(* (* Is this true? *) *)
+(* Lemma is_functor_U_functor : is_functor U_functor_data. *)
+(* Admitted. *)
 
-End test.
+(* Definition U : functor C^op HSET := tpair _ _ is_functor_U_functor. *)
+
+(* End test. *)
