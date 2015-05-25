@@ -5,72 +5,12 @@ Require Import Foundations.hlevel2.hSet.
 Require Import RezkCompletion.precategories.
 Require Import RezkCompletion.category_hset.
 Require Import RezkCompletion.functors_transformations.
-Require Import RezkCompletion.yoneda.
-(* Require Import RezkCompletion.whiskering. *)
+Require Import RezkCompletion.opp_precat.
 Require Import RezkCompletion.slicecat.
 
 Local Notation "a --> b" := (precategory_morphisms a b) (at level 50, left associativity).
 Local Notation "f ;; g"  := (compose f g) (at level 50, format "f  ;;  g").
 Local Notation "C '^op'" := (opp_precat C) (at level 3, format "C ^op").
-
-Section functor_op.
-
-Variable C D : precategory.
-Hypothesis hsD : has_homsets D.
-Variable F : functor C D.
-
-Definition functor_op_data : functor_data C^op D^op :=
-  tpair (fun F : C^op -> D^op => forall a b, a --> b -> F a --> F b) F
-        (fun (a b : C) (f : b --> a) => functor_on_morphisms F f).
-
-Lemma is_functor_functor_op : is_functor functor_op_data.
-Proof. split; intros; [ apply (functor_id F) | apply (functor_comp F) ]. Qed.
-
-Definition functor_op : functor C^op D^op := tpair _ _ is_functor_functor_op.
-
-Lemma has_homsets_op (hsC : has_homsets C) : has_homsets C^op.
-Proof. intros a b; apply hsC. Qed.
-
-(* Lemmas for definition of Cat *)
-Lemma functor_identity_left : functor_composite C C D (functor_identity C) F = F.
-Proof.
-apply (functor_eq _ _ hsD); case F; clear F; intros F; case F; trivial.
-Qed.
-
-Lemma functor_identity_right : functor_composite C D D F (functor_identity D) = F.
-Proof.
-apply (functor_eq _ _ hsD); case F; clear F; intros F; case F; trivial.
-Qed.
-
-Lemma functor_assoc
-  (C0 C1 C2 C3 : precategory) (hsC3 : has_homsets C3)
-  (F0 : functor C0 C1) (F1 : functor C1 C2) (F2 : functor C2 C3) :
-  functor_composite _ _ _ (functor_composite _ _ _ F0 F1) F2 =
-  functor_composite _ _ _ F0 (functor_composite _ _ _ F1 F2).
-Proof. apply (functor_eq _ _ hsC3); trivial. Qed.
-
-End functor_op.
-
-Section functor_eqs.
-  
-Variable C D E : precategory.
-Variable hsC : has_homsets C.
-Variable hsE : has_homsets E.
-
-Lemma functor_op_identity :
-  functor_op _ _ (functor_identity C) = functor_identity C^op.
-Proof.
-apply (functor_eq _ _ (has_homsets_op _ hsC)); trivial.
-Qed.
-
-Lemma functor_op_comp (F : functor C D) (G : functor D E) :
-  functor_op _ _ (functor_composite _ _ _ F G) =
-  functor_composite _ _ _ (functor_op _ _ F) (functor_op _ _ G).
-Proof.
-apply (functor_eq _ _ (has_homsets_op _ hsE)); trivial.
-Qed.
-
-End functor_eqs.
 
 (* Define the "V-precategory" and V valued presheafs *)
 Section Vcat.
@@ -156,6 +96,9 @@ apply isaprop_is_functor.
 apply has_homsets_Vcat.
 Qed.
 
+(*  -we define a special presheaf U taking U(X) to be the set of V-valued presheaves *)
+(* over C/X *)
+
 Variable C : precategory.
 Variable hsC : has_homsets C.
 
@@ -166,7 +109,7 @@ Definition U_fun (x : C^op) : HSET :=
 
 Definition U_func (x y : C) (f : y --> x) (F : functor (C / x)^op Vcat) :
   functor (C / y)^op Vcat :=
-    functor_composite _ _ _ (functor_op _ _ (slicecat_functor C hsC y x f)) F.
+    functor_composite _ _ _ (functor_opp (slicecat_functor C hsC y x f)) F.
 
 Definition U_functor_data : functor_data C^op HSET :=
  tpair (fun F : C^op -> HSET => forall a b, a --> b -> F a --> F b) U_fun
@@ -178,24 +121,18 @@ split; [ intro a | intros a b c f g]; simpl.
   apply funextfun; intro F.
   unfold identity; unfold U_func; simpl.
   rewrite slicecat_functor_identity.
-  rewrite functor_op_identity; try apply has_homsets_slice_precat.
-  apply (functor_identity_left (C / a)^op _ has_homsets_Vcat).
+  rewrite functor_opp_identity; try apply has_homsets_slice_precat.
+  apply (functor_identity_left (C / a)^op _ _ has_homsets_Vcat).
 apply funextfun; intro F.
 unfold compose; unfold U_func; simpl.
 rewrite slicecat_functor_comp.
-rewrite functor_op_comp; try apply has_homsets_slice_precat.
+rewrite functor_opp_composite; try apply has_homsets_slice_precat.
 apply (functor_assoc (C / c)^op (C / b)^op (C / a)^op _ has_homsets_Vcat).
 Qed.
 
 Definition U : functor C^op HSET := tpair _ _ is_functor_U_functor.
 
 End Vcat.
-
-Notation Vcat := Vcat_precategory.
-
-
-(*  -we define a special presheaf U taking U(X) to be the set of V-valued presheaves *)
-(* over C/X *)
 
 (*  -we define \tilde{U}(X) to be the sigma type of one F,  V-presheaf over C/X *)
 (* and one element  in F(X,1_X) *)
