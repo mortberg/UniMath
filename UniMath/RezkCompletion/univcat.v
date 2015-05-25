@@ -31,7 +31,7 @@ Definition functor_op : functor C^op D^op := tpair _ _ is_functor_functor_op.
 Lemma has_homsets_op (hsC : has_homsets C) : has_homsets C^op.
 Proof. intros a b; apply hsC. Qed.
 
-(* Lemmas for definition of CAT *)
+(* Lemmas for definition of Cat *)
 Lemma functor_identity_left : functor_composite C C D (functor_identity C) F = F.
 Proof.
 apply (functor_eq _ _ hsD); case F; clear F; intros F; case F; trivial.
@@ -42,18 +42,32 @@ Proof.
 apply (functor_eq _ _ hsD); case F; clear F; intros F; case F; trivial.
 Qed.
 
+Lemma functor_assoc
+  (C0 C1 C2 C3 : precategory) (hsC3 : has_homsets C3)
+  (F0 : functor C0 C1) (F1 : functor C1 C2) (F2 : functor C2 C3) :
+  functor_composite _ _ _ (functor_composite _ _ _ F0 F1) F2 =
+  functor_composite _ _ _ F0 (functor_composite _ _ _ F1 F2).
+Proof. apply (functor_eq _ _ hsC3); trivial. Qed.
+
 End functor_op.
 
 Section functor_eqs.
   
-Variable C : precategory.
+Variable C D E : precategory.
 Variable hsC : has_homsets C.
+Variable hsE : has_homsets E.
 
-Local Notation "c / x" := (slice_precat c x hsC).
-
-Lemma functor_op_identity : functor_op _ _ (functor_identity C) = functor_identity C^op.
+Lemma functor_op_identity :
+  functor_op _ _ (functor_identity C) = functor_identity C^op.
 Proof.
 apply (functor_eq _ _ (has_homsets_op _ hsC)); trivial.
+Qed.
+
+Lemma functor_op_comp (F : functor C D) (G : functor D E) :
+  functor_op _ _ (functor_composite _ _ _ F G) =
+  functor_composite _ _ _ (functor_op _ _ F) (functor_op _ _ G).
+Proof.
+apply (functor_eq _ _ (has_homsets_op _ hsE)); trivial.
 Qed.
 
 End functor_eqs.
@@ -160,48 +174,18 @@ Definition U_functor_data : functor_data C^op HSET :=
 
 Lemma is_functor_U_functor : is_functor U_functor_data.
 Proof.
-split.
-intro a.
-simpl.
+split; [ intro a | intros a b c f g]; simpl.
+  apply funextfun; intro F.
+  unfold identity; unfold U_func; simpl.
+  rewrite slicecat_functor_identity.
+  rewrite functor_op_identity; try apply has_homsets_slice_precat.
+  apply (functor_identity_left (C / a)^op _ has_homsets_Vcat).
 apply funextfun; intro F.
-unfold identity; simpl.
-unfold U_func; simpl.
-(* rewrite slicecat_functor_identity. *)
-(* rewrite functor_op_identity. *)
-(* simpl. *)
-(* rewrite (functor_identity_left (C / a)^op Vcat (has_homsets_Vcat)). *)
-(* apply idpath. *)
-(* apply has_homsets_slice_precat. *)
-admit.
-simpl.
-intros a b c f g.
-simpl.
-apply funextfun; intro Fv; simpl.
-apply functor_eq.
-admit.
-simpl.
-
-functor_composite_data
-     (functor_op_data (C / c) (C / b) (slicecat_functor C hsC c b g))
-     (functor_composite_data (functor_op_data (C / b) (C / a) (slicecat_functor C hsC b a f)) Fv)
-Check (
-
-     
-        (functor_op_data (C / b) (C / a) (slicecat_functor C hsC b a f)) _).
-
-
-Check (functor_composite_data
-     (functor_op_data (C / c) (C / a) (slicecat_functor C hsC c a (f ;; g)))
-     F).
-
-
-case F.
-
-simpl.
-
-trivial.
-
-Admitted.
+unfold compose; unfold U_func; simpl.
+rewrite slicecat_functor_comp.
+rewrite functor_op_comp; try apply has_homsets_slice_precat.
+apply (functor_assoc (C / c)^op (C / b)^op (C / a)^op _ has_homsets_Vcat).
+Qed.
 
 Definition U : functor C^op HSET := tpair _ _ is_functor_U_functor.
 
