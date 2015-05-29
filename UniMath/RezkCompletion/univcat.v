@@ -122,12 +122,12 @@ split; [ intro a | intros a b c f g]; simpl.
   unfold identity; unfold U_func; simpl.
   rewrite slicecat_functor_identity.
   rewrite functor_opp_identity; try apply has_homsets_slice_precat.
-  apply (functor_identity_left (C / a)^op _ _ has_homsets_Vcat).
+  apply functor_identity_left.
 apply funextfun; intro F.
 unfold compose; unfold U_func; simpl.
 rewrite slicecat_functor_comp.
 rewrite functor_opp_composite; try apply has_homsets_slice_precat.
-apply (functor_assoc (C / c)^op (C / b)^op (C / a)^op _ has_homsets_Vcat).
+apply (functor_assoc (C / c)^op (C / b)^op (C / a)^op).
 Qed.
 
 Definition U : functor C^op HSET := tpair _ _ is_functor_U_functor.
