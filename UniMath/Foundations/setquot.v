@@ -340,6 +340,9 @@ Definition foo (x : setquot (pr1 R)) : bool :=
   f x (@hinhuniv _ (hProppair _ (test3 x)) (bar x) (K' x)).
 
 Print Assumptions foo.
+(* Axioms: *)
+(* uahp : ∀ P P' : hProp, (pr1 P -> pr1 P') -> (pr1 P' -> pr1 P) -> P = P' *)
+(* funextfunax : ∀ (X Y : UU) (f g : X -> Y), (∀ x : X, f x = g x) -> f = g *)
 
 Goal foo true' = true.
 try reflexivity. (* not working *)
