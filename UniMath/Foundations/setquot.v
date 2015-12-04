@@ -238,12 +238,13 @@ Defined.
 
 (* Definition T : hSet := setquotinset (pr1 R). *)
 
-Definition true' : setquot (pr1 R) := setquotpr R true.
-Definition false' : setquot (pr1 R) := setquotpr R false.
+Definition bool' : UU := setquot (pr1 R).
+Definition true' : bool' := setquotpr R true.
+Definition false' : bool' := setquotpr R false.
 
 (* Version of predicate based on hdisj (ie truncated sum) *)
 
-Definition P' (t : setquot (pr1 R)) : hProp := hdisj (t = true') (t = false').
+Definition P' (t : bool') : hProp := hdisj (t = true') (t = false').
 
 Lemma K' (t : setquot (pr1 R)) : pr1 (P' t).
 Proof.
@@ -260,6 +261,116 @@ Goal K' true' = hdisj_in1 (idpath true').
 Abort.
 
 
+
+(*  Is not it possible to transform the example for computing a boolean? *)
+
+(*  One should be able to prove *)
+
+(*  not (Path _ true'  false') *)
+
+
+(* Definition bool'_to_type : bool' -> UU. *)
+(* Proof. *)
+(* intros b. *)
+(* Check (pr1 b). *)
+(* admit. *)
+
+(* { exact unit. } { exact empty. } *)
+(* Defined. *)
+
+(* Theorem nopathstruetofalse: true = false -> empty. *)
+(* Proof. intro X.  apply (transportf bool_to_type X tt).  Defined. *)
+
+
+Lemma true'neqfalse' : neg (true' = false').
+Proof.
+intros H.
+generalize (maponpaths (fun apa => pr1 (pr1 apa true)) H).
+simpl.
+intro H2.
+apply nopathsfalsetotrue.
+rewrite <- H2.
+apply idpath.
+Defined.
+
+Lemma test1 (x : setquot (pr1 R)) : x = true' -> x = false' -> empty.
+Proof.
+intro H.
+rewrite H.
+apply true'neqfalse'.
+Defined.
+
+(*  This means that the property P' t is of the form *)
+
+(*  ishinh (A + B) *)
+
+(* with   A -> B -> N0 *)
+
+(*  If A -> B -> N0  we should be able to prove *)
+(*  isinh A -> isinh B -> N0 *)
+
+Lemma test2 (x : setquot (pr1 R)) :
+  pr1 (ishinh (x = true')) -> pr1 (ishinh (x = false')) -> empty.
+Proof.
+intros p1 p2.
+refine (@hinhuniv (x = true') (hProppair empty isapropempty) _ p1).
+intro H1.
+refine  (@hinhuniv _ (hProppair _ isapropempty) _ p2).
+intro H2.
+apply (test1 x H1 H2).
+Defined.
+
+(* and then we can prove that *)
+(*  isinh A + isinh B *)
+(* is a proposition. *)
+
+Lemma test3 (x : setquot (pr1 R)) :
+  isaprop (coprod (pr1 (ishinh (x = true'))) (pr1 (ishinh (x = false')))).
+Proof.
+apply invproofirrelevance.
+intros a b.
+induction a as [a|a].
+- induction b as [b|b].
+  + apply maponpaths.
+    apply (@isapropishinh (x = true') a b).
+  + destruct (test2 x a b).
+- induction b as [b|b].
+  + destruct (test2 x b a).
+  + apply maponpaths, isapropishinh.
+Defined.
+
+
+(*  But we have a function   isinh A + isinh B -> bool *)
+
+Definition f (x : setquot (pr1 R)) :
+  coprod (pr1 (ishinh (x = true'))) (pr1 (ishinh (x = false'))) -> bool.
+Proof.
+intro H; destruct H.
+  exact true.
+exact false.
+Defined.
+
+(*  This means that using K', we can define a function
+      foo : setquot bool R.1 -> bool *)
+(* and then we can ask about foo false and foo true, *)
+
+Definition bar (x : setquot (pr1 R)) : (x = true') ⨿ (x = false') ->
+   pr1 (ishinh (x = true')) ⨿ pr1 (ishinh (x = false')).
+Proof.
+intro H.
+case H; intro p.
+  exact (inl (hinhpr p)).
+exact (inr (hinhpr p)).
+Defined.
+
+Definition foo (x : setquot (pr1 R)) : bool :=
+  f x (@hinhuniv _ (hProppair _ (test3 x)) (bar x) (K' x)).
+
+Print Assumptions foo.
+
+Goal foo true' = true.
+try reflexivity.
+Admitted.
 
 (* Version of predicate based on sum *)
 
