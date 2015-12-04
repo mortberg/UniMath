@@ -200,9 +200,6 @@ apply subtypeEquality.
   intro a.
   apply isapropiseqclass.
 apply funextsec; intro x0.
-(* destruct c as [A iseq]. *)
-(* destruct x as [x is]. *)
-(* simpl in *. *)
 apply uahp.
 - intro r.
   exact (eqax1 (pr2 c) (pr1 x) x0 r (pr2 x)).
@@ -262,26 +259,10 @@ Abort.
 
 
 
-(*  Is not it possible to transform the example for computing a boolean? *)
+(* Example of computing a boolean using K' by Thierry: *)
 
 (*  One should be able to prove *)
-
 (*  not (Path _ true'  false') *)
-
-
-(* Definition bool'_to_type : bool' -> UU. *)
-(* Proof. *)
-(* intros b. *)
-(* Check (pr1 b). *)
-(* admit. *)
-
-(* { exact unit. } { exact empty. } *)
-(* Defined. *)
-
-(* Theorem nopathstruetofalse: true = false -> empty. *)
-(* Proof. intro X.  apply (transportf bool_to_type X tt).  Defined. *)
-
-
 Lemma true'neqfalse' : neg (true' = false').
 Proof.
 intros H.
@@ -301,14 +282,10 @@ apply true'neqfalse'.
 Defined.
 
 (*  This means that the property P' t is of the form *)
-
 (*  ishinh (A + B) *)
-
 (* with   A -> B -> N0 *)
-
 (*  If A -> B -> N0  we should be able to prove *)
 (*  isinh A -> isinh B -> N0 *)
-
 Lemma test2 (x : setquot (pr1 R)) :
   pr1 (ishinh (x = true')) -> pr1 (ishinh (x = false')) -> empty.
 Proof.
@@ -323,7 +300,6 @@ Defined.
 (* and then we can prove that *)
 (*  isinh A + isinh B *)
 (* is a proposition. *)
-
 Lemma test3 (x : setquot (pr1 R)) :
   isaprop (coprod (pr1 (ishinh (x = true'))) (pr1 (ishinh (x = false')))).
 Proof.
@@ -339,9 +315,7 @@ induction a as [a|a].
   + apply maponpaths, isapropishinh.
 Defined.
 
-
 (*  But we have a function   isinh A + isinh B -> bool *)
-
 Definition f (x : setquot (pr1 R)) :
   coprod (pr1 (ishinh (x = true'))) (pr1 (ishinh (x = false'))) -> bool.
 Proof.
@@ -353,7 +327,6 @@ Defined.
 (*  This means that using K', we can define a function
       foo : setquot bool R.1 -> bool *)
 (* and then we can ask about foo false and foo true, *)
-
 Definition bar (x : setquot (pr1 R)) : (x = true') ⨿ (x = false') ->
    pr1 (ishinh (x = true')) ⨿ pr1 (ishinh (x = false')).
 Proof.
@@ -369,14 +342,17 @@ Definition foo (x : setquot (pr1 R)) : bool :=
 Print Assumptions foo.
 
 Goal foo true' = true.
-try reflexivity.
+try reflexivity. (* not working *)
 Admitted.
 
-(* Version of predicate based on sum *)
+
+
+
+
+(* Alternative version of the first exercise based on a predicate
+   based on sum instead of hdisj *)
 
 (* preliminary results *)
-
-
 Lemma iscompsetquotpr {X : UU} (R : eqrel X) (x x' : X) (a : pr1 (pr1 R x x')) :
   setquotpr R x = setquotpr R x'.
 Proof.
