@@ -257,8 +257,6 @@ Goal K' true' = hdisj_in1 (idpath true').
  try reflexivity.                (* Error: Unable to unify "L'" with "K' true'". *)
 Abort.
 
-
-
 (* Example of computing a boolean using K' by Thierry: *)
 
 (*  One should be able to prove *)
@@ -336,16 +334,17 @@ case H; intro p.
 exact (inr (hinhpr p)).
 Defined.
 
-Definition foo (x : setquot (pr1 R)) : bool :=
-  f x (@hinhuniv _ (hProppair _ (test3 x)) (bar x) (K' x)).
+Definition foo {x : setquot (pr1 R)} (x' : pr1 (P' x)) : bool :=
+  f x (@hinhuniv _ (hProppair _ (test3 x)) (bar x) x').
 
 Print Assumptions foo.
 (* Axioms: *)
 (* uahp : ∀ P P' : hProp, (pr1 P -> pr1 P') -> (pr1 P' -> pr1 P) -> P = P' *)
 (* funextfunax : ∀ (X Y : UU) (f g : X -> Y), (∀ x : X, f x = g x) -> f = g *)
 
-Goal foo true' = true.
-try reflexivity. (* not working *)
+(* Eval compute in foo (K' true'). *)  (* This is stuck *)
+Goal foo (K' true') = true.
+try reflexivity.
 Admitted.
 
 
