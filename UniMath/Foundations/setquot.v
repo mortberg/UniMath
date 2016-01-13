@@ -2,7 +2,7 @@
 definitions needed and removes coercions to make translation to
 cubicaltt easier *)
 
-Require Import UniMath.Foundations.Basics.All.
+Require Import UniMath.Foundations.Basics.PartD.
 
 (* Propositions *)
 
@@ -182,7 +182,7 @@ intros X0.
 set (rax := eqrelrefl R).
 set (sax := eqrelsymm R).
 set (tax := eqreltrans R).
-refine (tpair _ _ _).
+simple refine (tpair _ _ _).
   exact (fun x : X => (pr1 R) X0 x).
 split.
   exact (hinhpr (tpair _ X0 (rax X0))).
@@ -224,7 +224,7 @@ Defined.
 
 Definition R : eqrel bool.
 Proof.
-  refine (_,,_).
+  simple refine (_,,_).
   { intros x y. exists (x=y). apply isasetbool. }
   split.
   - split.
