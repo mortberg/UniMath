@@ -219,6 +219,44 @@ apply (@hinhuniv (carrier (pr1 c)) (P c)).
 - apply (eqax0 (pr2 c)).
 Defined.
 
+Theorem setquotuniv2prop {X : UU} (R : eqrel X) (P : setquot (pr1 R) -> setquot (pr1 R) -> hProp)
+  (is : ∀ x x' : X, pr1 (P (setquotpr R x) (setquotpr R x'))) : ∀ c c' : setquot (pr1 R), pr1 (P c c').
+Proof.
+intros c c'.
+assert (int1 : ∀ c0' : _ , pr1 (P c c0')).
+  apply (setquotunivprop R (fun c0' => P c c0')).
+  intro x.
+  apply (setquotunivprop R (fun c0 : _ => P c0 (setquotpr R x))).
+  intro x0.
+  apply (is x0 x).
+apply (int1 c').
+Defined.
+
+Theorem weqpathsinsetquot { X : UU } ( R : eqrel X ) ( x x' : X ) : pr1 (pr1 R x x') ≃ setquotpr R x = setquotpr R x' .
+Proof .
+(* intros . split with ( iscompsetquotpr R x x' ) .  apply isweqimplimpl .  intro e .  set ( e' := maponpaths ( pr1setquot R ) e ) .  unfold pr1setquot in e' . unfold setquotpr in e' . simpl in e' . assert ( e'' := maponpaths ( fun f : _ => f x' ) e' ) .  simpl in e'' . apply ( eqweqmaphProp ( pathsinv0 e'' ) ( eqrelrefl R x' ) ) .  apply ( pr2 ( R x x' ) ) .  set ( int := isasetsetquot R (setquotpr R x) (setquotpr R x') ) .  assumption .  *)
+admit.
+Admitted.
+
+Definition isdecprop (P:UU) := (P ⨿ ¬P) × isaprop P.
+
+Theorem isdeceqsetquot_non_constr {X : UU} (R : eqrel X)
+  (is : ∀ x x' : X, isdecprop (pr1 (pr1 R x x'))) : isdeceq (setquot (pr1 R)).
+Proof.
+apply isdeceqif.
+intros x x'.
+apply (setquotuniv2prop R (fun x0 x0' => hProppair _ (isapropisdecprop (paths x0 x0')))).
+intros x0 x0'.
+simpl.
+apply (isdecpropweqf (weqpathsinsetquot R x0 x0') (is x0 x0')).
+Defined.
+
+(* Definition  isdeceqsetquot {X : UU} (R : eqrel X) *)
+(*   (is : ∀ x x' : X, isdecprop (pr1 (pr1 R x x'))) : isdeceq (setquot (pr1 R)). *)
+(* Proof. *)
+(* intros x x'. *)
+(* destruct (boolchoice (setquotbooleq R is x x')) as [ i | ni ] .  apply ( ii1 ( setquotbooleqtopaths R is x x' i ) ) . apply ii2 .   intro e .  destruct ( falsetonegtrue _ ni ( setquotpathstobooleq R is x x' e ) ) . Defined . *)
+
 
 (* New stuff below here *)
 
