@@ -223,32 +223,146 @@ Theorem setquotuniv2prop {X : UU} (R : eqrel X) (P : setquot (pr1 R) -> setquot 
   (is : ∀ x x' : X, pr1 (P (setquotpr R x) (setquotpr R x'))) : ∀ c c' : setquot (pr1 R), pr1 (P c c').
 Proof.
 intros c c'.
-assert (int1 : ∀ c0' : _ , pr1 (P c c0')).
-  apply (setquotunivprop R (fun c0' => P c c0')).
-  intro x.
-  apply (setquotunivprop R (fun c0 : _ => P c0 (setquotpr R x))).
-  intro x0.
-  apply (is x0 x).
-apply (int1 c').
+  apply (setquotunivprop R (λ c0' : setquot (pr1 R), P c c0')
+     (λ x : X,
+      setquotunivprop R (λ c0 : setquot (pr1 R), P c0 (setquotpr R x))
+        (λ x0 : X, is x0 x) c) c').
 Defined.
 
-Theorem weqpathsinsetquot { X : UU } ( R : eqrel X ) ( x x' : X ) : pr1 (pr1 R x x') ≃ setquotpr R x = setquotpr R x' .
-Proof .
-(* intros . split with ( iscompsetquotpr R x x' ) .  apply isweqimplimpl .  intro e .  set ( e' := maponpaths ( pr1setquot R ) e ) .  unfold pr1setquot in e' . unfold setquotpr in e' . simpl in e' . assert ( e'' := maponpaths ( fun f : _ => f x' ) e' ) .  simpl in e'' . apply ( eqweqmaphProp ( pathsinv0 e'' ) ( eqrelrefl R x' ) ) .  apply ( pr2 ( R x x' ) ) .  set ( int := isasetsetquot R (setquotpr R x) (setquotpr R x') ) .  assumption .  *)
-admit.
-Admitted.
+Lemma iscompsetquotpr {X : UU} (R : eqrel X) (x x' : X) (a : pr1 (pr1 R x x')) :
+  setquotpr R x = setquotpr R x'.
+Proof.
+(* assert (temp : (∀ x0 x'0 : setquot (pr1 R), pr1 x0 = pr1 x'0 -> x0 = x'0)). *)
+(* intros. *)
+(* Check (pr1 x0). *)
+(* apply (@setquotuniv2prop X R (fun x y => hProppair (x = y) (isasetsetquot (pr1 R) x y))). *)
+(* intros. *)
+(* simpl. *)
+(* simpl in *. *)
+(* Check (setquotpr R x1). *)
+generalize (invmaponpathsincl _ (isinclpr1setquot (pr1 R))).
+intros.
+apply (invmaponpathsincl _ (isinclpr1setquot (pr1 R))); simpl.
+apply funextsec; intro x0.
+apply uahp.
+- intro r0.
+  exact (eqreltrans R _ _ _ (eqrelsymm R _ _ a) r0).
+- intro x0'.
+  exact (eqreltrans R _ _ _ a x0').
+Defined.
 
-Definition isdecprop (P:UU) := (P ⨿ ¬P) × isaprop P.
+Theorem weqpathsinsetquot {X : UU} (R : eqrel X) (x x' : X) :
+  weq (pr1 (pr1 R x x')) (setquotpr R x = setquotpr R x').
+Proof.
+exists (iscompsetquotpr R x x').
+apply isweqimplimpl.
+- intro e.
+  set (e' := maponpaths (pr1setquot (pr1 R)) e).
+  set (e'' := maponpaths (fun f => f x') e').
+  exact (eqweqmaphProp (pathsinv0 e'') (eqrelrefl R x')).
+- exact (pr2 (pr1 R x x')).
+- exact (isasetsetquot (pr1 R) (setquotpr R x) (setquotpr R x')).
+Defined.
+
+(* Definition isdecprop (P:UU) := (P ⨿ ¬P) × isaprop P. *)
+(* Theorem isapropisdeceq (X:UU): isaprop (isdeceq X). *)
+(* Proof. intro. apply ( isofhlevelsn 0 ) .  intro is . unfold isdeceq. apply impred . intro x .  apply ( isapropisisolated X x ) .   Defined . *)
+
+Lemma isdecpropweqf {X Y} : X≃Y -> isdecprop X -> isdecprop Y.
+Proof.
+  intros w i. unfold isdecprop in *. induction i as [xnx i]. split.
+  - clear i. induction xnx as [x|nx].
+    * apply ii1. now apply w.
+    * apply ii2. intro x'. apply nx. now apply (invmap w).
+  - apply (isofhlevelweqf 1 (X:=X)).
+    { exact w. }
+    { exact i. }
+Defined.
+
+
+
+(* Theorem isapropisisolated ( X : UU ) ( x : X ) : isaprop ( isisolated X x ) . *)
+(* Proof. *)
+(* apply isofhlevelsn. *)
+(* intro is. *)
+(* apply impred. *)
+(* intro x'. *)
+(* apply (isapropdec _ (isaproppathsfromisolated X x is x')). *)
+(* Defined. *)
+
+
+(* Lemma C P Q : isaprop P -> isaprop Q -> (P -> ¬Q) -> isaprop (sum P Q). *)
+(* Proof. *)
+(*   intros i j n. apply invproofirrelevance. intros a b. *)
+(*   induction a as [a|a]. *)
+(*   - induction b as [b|b]. *)
+(*     + apply maponpaths, i. *)
+(*     + induction (n a b). *)
+(*   - induction b as [b|b]. *)
+(*     + induction (n b a). *)
+(*     + apply maponpaths, j. *)
+(* Defined. *)
+
+
+(* Theorem isapropisdeceq (X : UU) (H : isaset X) : isaprop (isdeceq X). *)
+(* Proof. *)
+(* unfold isdeceq. *)
+(* apply impred. *)
+(* intros. *)
+(* apply impred. *)
+(* intros. *)
+(* apply C. *)
+(* apply H. *)
+(* apply isapropneg. *)
+(* intros. *)
+(* rewrite X0. *)
+(* intro XX. *)
+(* apply (XX (idpath t0)). *)
+(* Defined. *)
+
+Lemma isapropcoprod P Q : isaprop P -> isaprop Q -> (P -> Q -> ∅) -> isaprop (P ⨿ Q).
+Proof.
+  intros ? ? i j n. apply invproofirrelevance. intros a b. apply inv_equality_by_case.
+  induction a as [a|a].
+  - induction b as [b|b].
+    + apply X.
+    + contradicts (i a) b.
+  - induction b as [b|b].
+    + contradicts (i b) a.
+    + apply X0.
+Defined.
+
+Theorem isapropdec (X:UU): isaprop X -> isaprop (X ⨿ ¬X).
+Proof.
+  intros a b c.
+apply isapropcoprod.
+  - exact a .
+  - apply isapropneg.
+  - exact (λ x n, n x).
+Defined.
+
+
+Definition isapropisdecprop ( X : UU ) : isaprop ( isdecprop X ).
+Proof.
+  apply (isofhlevelweqf 1 (weqdirprodcomm _ _)).
+  apply isofhleveltotal2.
+  - apply isapropisaprop.
+  - intro i. now apply isapropdec.
+Defined.
+
 
 Theorem isdeceqsetquot_non_constr {X : UU} (R : eqrel X)
   (is : ∀ x x' : X, isdecprop (pr1 (pr1 R x x'))) : isdeceq (setquot (pr1 R)).
 Proof.
 apply isdeceqif.
 intros x x'.
-apply (setquotuniv2prop R (fun x0 x0' => hProppair _ (isapropisdecprop (paths x0 x0')))).
+apply (@setquotuniv2prop X R
+       (fun (x0 x'0 : setquot (pr1 R)) => hProppair (isdecprop (paths x0 x'0)) (isapropisdecprop (paths x0 x'0)))).
+simpl.
 intros x0 x0'.
 simpl.
-apply (isdecpropweqf (weqpathsinsetquot R x0 x0') (is x0 x0')).
+Check (isdecpropweqf).
+apply (@isdecpropweqf (pr1 (pr1 R x0 x0')) (setquotpr R x0 = setquotpr R x0') (@weqpathsinsetquot X R x0 x0') (@is x0 x0')).
 Defined.
 
 (* Definition  isdeceqsetquot {X : UU} (R : eqrel X) *)
@@ -257,6 +371,82 @@ Defined.
 (* intros x x'. *)
 (* destruct (boolchoice (setquotbooleq R is x x')) as [ i | ni ] .  apply ( ii1 ( setquotbooleqtopaths R is x x' i ) ) . apply ii2 .   intro e .  destruct ( falsetonegtrue _ ni ( setquotpathstobooleq R is x x' e ) ) . Defined . *)
 
+Require Import UniMath.Foundations.NumberSystems.NaturalNumbers.
+
+(* hz experiment *)
+Lemma nat1 (m0 m1 n0 n1 : nat) (h0 : m0 = n0) (h1 : m1 = n1) : m0 + m1 = n0 + n1.
+Proof.
+rewrite h0.
+rewrite h1.
+apply idpath.
+Qed.
+
+Definition relnat2 : eqrel (prod nat nat).
+simple refine (tpair _ _ _).
+- intros x y.
+  simple refine (hProppair _ _).
+  + exact (paths (fst x + snd y) (snd x + fst y)).
+  + apply isasetnat.
+- simpl.
+  repeat split.
+  + intros x y z.
+    simpl.
+    intros h1 h2.
+apply (@natplusrcan _ _ (fst y + snd y)).
+    generalize (nat1 _ _ _ _ h1 h2).
+repeat rewrite natplusassoc.
+intros.
+assert (H1 : snd z + (fst y + snd y) = snd y + (fst y + snd z)).
+rewrite <- natplusassoc.
+rewrite natpluscomm.
+apply nat1.
+apply idpath.
+rewrite natpluscomm.
+apply idpath.
+rewrite H1.
+rewrite H.
+apply nat1.
+apply idpath.
+rewrite <- natplusassoc.
+rewrite natpluscomm.
+apply nat1.
+apply idpath.
+apply idpath.
+  + intros x; simpl.
+    rewrite natpluscomm.
+    apply idpath.
+  + intros x y; simpl.
+    rewrite natpluscomm.
+    intros h.
+    rewrite h.
+    rewrite natpluscomm.
+    apply idpath.
+Defined.
+
+Definition hz := setquot (pr1 relnat2).
+Definition hzero := setquotpr relnat2 (0,0).
+Definition hone := setquotpr relnat2 (1,0).
+
+Lemma isdeceqhz : isdeceq hz.
+Proof.
+apply isdeceqsetquot_non_constr.
+intros x y.
+split.
+destruct x; destruct y.
+apply (isdeceqnat (n + n2) (n0 + n1)).
+destruct x; destruct y.
+apply (isasetnat (n + n2) (n0 + n1)).
+Defined.
+
+Definition deceqtobool {X : UU} (h : isdeceq X) (x y : X) : bool := match h x y with
+  | ii1 _ => true
+  | ii2 _ => false
+  end.
+
+Definition test : bool := @deceqtobool hz isdeceqhz hzero hone.
+
+(* This is stuck! *)
+(* Eval compute in test. *)
 
 (* New stuff below here *)
 
@@ -391,32 +581,6 @@ Admitted.
 
 (* Alternative version of the first exercise based on a predicate
    based on sum instead of hdisj *)
-
-(* preliminary results *)
-Lemma iscompsetquotpr {X : UU} (R : eqrel X) (x x' : X) (a : pr1 (pr1 R x x')) :
-  setquotpr R x = setquotpr R x'.
-Proof.
-apply (invmaponpathsincl _ (isinclpr1setquot (pr1 R))); simpl.
-apply funextsec; intro x0.
-apply uahp.
-- intro r0.
-  exact (eqreltrans R _ _ _ (eqrelsymm R _ _ a) r0).
-- intro x0'.
-  exact (eqreltrans R _ _ _ a x0').
-Defined.
-
-Theorem weqpathsinsetquot {X : UU} (R : eqrel X) (x x' : X) :
-  weq (pr1 (pr1 R x x')) (setquotpr R x = setquotpr R x').
-Proof.
-split with (iscompsetquotpr R x x').
-apply isweqimplimpl.
-- intro e.
-  set (e' := maponpaths (pr1setquot (pr1 R)) e).
-  set (e'' := maponpaths (fun f => f x') e').
-  exact (eqweqmaphProp (pathsinv0 e'') (eqrelrefl R x')).
-- exact (pr2 (pr1 R x x')).
-- exact (isasetsetquot (pr1 R) (setquotpr R x) (setquotpr R x')).
-Defined.
 
 Lemma C P Q : isaprop P -> isaprop Q -> (P -> ¬Q) -> isaprop (sum P Q).
 Proof.
