@@ -232,23 +232,16 @@ Defined.
 Lemma iscompsetquotpr {X : UU} (R : eqrel X) (x x' : X) (a : pr1 (pr1 R x x')) :
   setquotpr R x = setquotpr R x'.
 Proof.
-(* assert (temp : (∀ x0 x'0 : setquot (pr1 R), pr1 x0 = pr1 x'0 -> x0 = x'0)). *)
-(* intros. *)
-(* Check (pr1 x0). *)
-(* apply (@setquotuniv2prop X R (fun x y => hProppair (x = y) (isasetsetquot (pr1 R) x y))). *)
-(* intros. *)
-(* simpl. *)
-(* simpl in *. *)
-(* Check (setquotpr R x1). *)
-generalize (invmaponpathsincl _ (isinclpr1setquot (pr1 R))).
-intros.
-apply (invmaponpathsincl _ (isinclpr1setquot (pr1 R))); simpl.
-apply funextsec; intro x0.
-apply uahp.
-- intro r0.
-  exact (eqreltrans R _ _ _ (eqrelsymm R _ _ a) r0).
-- intro x0'.
-  exact (eqreltrans R _ _ _ a x0').
+apply (@subtypeEquality (hsubtypes X) (@iseqclass X (pr1 R))).
+- intros b.
+  apply isapropiseqclass.
+- apply funextsec; intro x0.
+  simpl.
+  apply uahp.
+  * intro r0.
+    exact (@eqreltrans X R _ _ _ (eqrelsymm R _ _ a) r0).
+  * intro x0'.
+    exact (eqreltrans R _ _ _ a x0').
 Defined.
 
 Theorem weqpathsinsetquot {X : UU} (R : eqrel X) (x x' : X) :
@@ -392,7 +385,7 @@ simple refine (tpair _ _ _).
   + intros x y z.
     simpl.
     intros h1 h2.
-apply (@natplusrcan _ _ (fst y + snd y)).
+    apply (@natplusrcan _ _ (fst y + snd y)).
     generalize (nat1 _ _ _ _ h1 h2).
 repeat rewrite natplusassoc.
 intros.
@@ -431,11 +424,12 @@ Lemma isdeceqhz : isdeceq hz.
 Proof.
 apply isdeceqsetquot_non_constr.
 intros x y.
+case x as [x1 x2].
+case y as [y1 y2].
 split.
-destruct x; destruct y.
-apply (isdeceqnat (n + n2) (n0 + n1)).
-destruct x; destruct y.
-apply (isasetnat (n + n2) (n0 + n1)).
+simpl.
+apply (isdeceqnat (x1 + y2) (x2 + y1)).
+apply (@isasetnat (x1 + y2) (x2 + y1)).
 Defined.
 
 Definition deceqtobool {X : UU} (h : isdeceq X) (x y : X) : bool := match h x y with
