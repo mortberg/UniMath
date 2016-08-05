@@ -79,3 +79,4 @@ Abelian.v
 category_binops.v
 category_abgr.v
 AbelianisAdditive.v
+SubobjectClassifier.v
