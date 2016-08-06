@@ -37,6 +37,8 @@ Require Import UniMath.CategoryTheory.equivalences.
 Require Import UniMath.CategoryTheory.exponentials.
 Require Import UniMath.CategoryTheory.limits.FunctorsPointwiseBinProduct.
 Require Import UniMath.CategoryTheory.covyoneda.
+Require Import UniMath.CategoryTheory.Monics.
+Require Import UniMath.CategoryTheory.SubobjectClassifier.
 
 Local Notation "C '^op'" := (opp_precat C) (at level 3, format "C ^op").
 Local Notation "[ C , D , hs ]" := (functor_precategory C D hs).
@@ -516,6 +518,237 @@ mkpair.
 Defined.
 
 End exponentials.
+
+Section subobject_classifier.
+
+(* Two object set *)
+Local Definition twoset : HSET := pr1 (pr1 (BinCoproductsHSET unitHSET unitHSET)).
+
+Definition propset : HSET.
+mkpair.
+- apply hProp.
+- apply isasethProp.
+Defined.
+(* apply hProp_to_hSet. *)
+(* apply (∥ pr1 twoset ∥). *)
+(* Defined. *)
+
+Local Definition falsemap : HSET⟦TerminalHSET,propset⟧.
+Proof.
+intro x.
+apply hfalse.
+Defined.
+
+Local Definition truemap : HSET⟦TerminalHSET,propset⟧.
+Proof.
+intro x.
+apply htrue.
+Defined.
+
+Definition hProp' : HSET.
+Proof.
+mkpair.
+- apply (Σ (P : hProp), P).
+- Search isaset total2.
+apply isaset_total2.
+apply isasethProp.
+
+intro x.
+apply isasetaprop.
+apply propproperty.
+Defined.
+
+
+Lemma iscontrhProp' : iscontr (pr1 hProp').
+Proof.
+simpl.
+mkpair.
+- mkpair.
+  + mkpair.
+    * apply unit.
+    * apply isapropunit.
+ + apply tt.
+- intros [P hP].
+apply subtypeEquality.
+intro x.
+apply (pr2 x).
+simpl.
+apply subtypeEquality.
+intro x.
+apply isapropisaprop.
+simpl.
+apply (propositionalUnivalenceAxiom P unit (pr2 P) isapropunit).
+intro; apply tt.
+intro; apply hP.
+Defined.
+
+Lemma test : pr1 (pr1 TerminalHSET) ≃ pr1 hProp'.
+Proof.
+apply wequnittocontr, iscontrhProp'.
+Defined.
+
+Lemma testiso : iso TerminalHSET hProp'.
+Proof.
+apply hset_equiv_iso.
+apply test.
+Defined.
+
+(*
+
+hProp' ---->   1
+  |            |
+  |            |
+  V            V
+hProp  ----> hProp
+
+
+*)
+
+Definition from_hProp' : HSET ⟦ hProp', propset ⟧ := pr1.
+
+Lemma TerminalArrowUnique {C : precategory} (T : Terminal C) (a : C)
+  (f : C⟦a,TerminalObject T⟧) : f = TerminalArrow a.
+Proof.
+  apply (pr2 (pr2 T _ ) _ ).
+Defined.
+
+Lemma temp : inv_from_iso testiso = TerminalArrow hProp'.
+Proof.
+apply TerminalArrowUnique.
+Defined.
+
+Lemma commutes : TerminalArrow hProp' ;; truemap = from_hProp' ;; identity propset.
+Proof.
+rewrite <- temp, id_right.
+unfold compose; apply funextfun; intro x; simpl.
+unfold from_hProp'.
+unfold truemap.
+destruct x.
+simpl.
+destruct t.
+simpl in *.
+apply subtypeEquality.
+intro x.
+apply isapropisaprop.
+simpl.
+assert (H : iscontr t).
+apply (iscontraprop1 p0 p).
+Search unit iscontr.
+Search weq "inv".
+apply (invweq (univalence unit t)).
+apply (wequnittocontr H).
+Qed.
+
+Lemma HSET_monic_isincl A B (j : Monic HSET A B) : isincl (pr1 j).
+Proof.
+apply isinclbetweensets; try apply setproperty.
+intros a b Hab.
+assert (H : (λ _ : pr1 A, pr1 j a) = (λ _ : pr1 A, pr1 j b)).
+  apply funextfun; intro x; apply Hab.
+apply (toforallpaths _ _ _ (pr2 j A (fun _ => a) (fun _ => b) H) a).
+Defined.
+
+Definition to_hProp' U X (j : Monic HSET U X) : HSET⟦U,hProp'⟧.
+Proof.
+simpl.
+intro u.
+destruct j as [j Hj].
+mkpair.
+- mkpair.
+  + apply (hfiber j (j u)).
+  +
+Search hfiber.
+assert (H : isaset (hfiber j (j u))).
+intros a b.
+apply isaproppathsfromisolated.
+unfold isisolated.
+intro.
+apply inl.
+destruct a. destruct x'.
+apply subtypeEquality.
+intro A.
+apply setproperty.
+simpl.
+rewrite <- p0 in p.
+apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
+unfold isaset in H.
+intros.
+apply iscontraprop1.
+apply H.
+destruct x.
+destruct x'.
+apply subtypeEquality.
+intro A.
+apply setproperty.
+simpl.
+rewrite <- p0 in p.
+apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
+- apply (u,,idpath (j u)).
+Defined.
+
+Definition to_propset U X (j : Monic HSET U X) : HSET⟦X,propset⟧.
+Proof.
+intro x.
+destruct j as [j Hj].
+mkpair.
+apply (hfiber j x).
+
+assert (H : isaset (hfiber j x)).
+intros a b.
+apply isaproppathsfromisolated.
+unfold isisolated.
+intro.
+apply inl.
+destruct a. destruct x'.
+apply subtypeEquality.
+intro A.
+apply setproperty.
+simpl.
+rewrite <- p0 in p.
+apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
+unfold isaset in H.
+intros.
+apply iscontraprop1.
+apply H.
+destruct x0.
+destruct x'.
+apply subtypeEquality.
+intro A.
+apply setproperty.
+simpl.
+rewrite <- p0 in p.
+apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
+Defined.
+
+Definition hProp'_to_propset : HSET⟦hProp',propset⟧ := pr1.
+
+Lemma commutes2 U X (j : Monic HSET U X) :
+  to_hProp' U X j ;; hProp'_to_propset = j ;; to_propset U X j.
+Admitted.
+
+Lemma pullback2 U X (j : Monic HSET U X) :
+  isPullback _ _ _ _ (commutes2 U X j).
+Admitted.
+
+(* Lemma isPullbackGluedSquare : isPullback (i ;; f) g m (j ;; k) glueSquares. *)
+
+Definition SubobjectClassifierHSET : SubobjectClassifier HSET TerminalHSET.
+Proof.
+apply (mk_SubobjectClassifier _ _ truemap).
+intros U X j.
+mkpair.
+-
+simple refine (tpair _ _ _).
++ apply (to_propset U X j).
++ mkpair.
+rewrite <- commutes2.
+admit.
+admit.
+Admitted.
+
+End subobject_classifier.
+
+
 
 (** This section defines exponential in [C,HSET] following a slight
 variation of Moerdijk-MacLane (p. 46, Prop. 1).
