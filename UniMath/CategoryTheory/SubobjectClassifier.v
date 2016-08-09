@@ -17,8 +17,8 @@ Local Notation "1" := T.
 
 Definition isSubobjectClassifier {Ω : C} (t : C⟦1,Ω⟧) : UU :=
   Π {U X : C} (j : Monic _ U X),
-    ∃! (Xj : C⟦X,Ω⟧), Σ (sq : TerminalArrow U ;; t = j ;; Xj),
-      isPullback t Xj (TerminalArrow U) j sq.
+    ∃! (Xj : C⟦X,Ω⟧), Σ (sq : j ;; Xj = TerminalArrow U ;; t),
+      isPullback Xj t j (TerminalArrow U) sq.
 
 Lemma isaprop_isSubobjectClassifier (Ω : C) (t : C⟦1,Ω⟧) :
   isaprop (isSubobjectClassifier t).
@@ -47,7 +47,7 @@ Definition SubobjectClassifier_isSubobjectClassifier (Ω : SubobjectClassifier) 
 Definition ClassifyingMor (Ω : SubobjectClassifier) {U X : C} (j : Monic _ U X) : C⟦X,Ω⟧ := pr1 (pr1 (SubobjectClassifier_isSubobjectClassifier Ω _ _ j)).
 
 Definition ClassifyingMorCommutes (Ω : SubobjectClassifier) {U X : C} (j : Monic _ U X) :
-  TerminalArrow U ;; SubobjectClassifierMor Ω = j ;; ClassifyingMor Ω j
+  j ;; ClassifyingMor Ω j = TerminalArrow U ;; SubobjectClassifierMor Ω
     := pr1 (pr2 (pr1 (SubobjectClassifier_isSubobjectClassifier Ω _ _ j))).
 
 Definition ClassifyingMorSquareIsPullback (Ω : SubobjectClassifier) {U X : C} (j : Monic _ U X) :

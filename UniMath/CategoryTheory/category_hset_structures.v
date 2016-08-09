@@ -522,46 +522,30 @@ End exponentials.
 Section subobject_classifier.
 
 (* Two object set *)
-Local Definition twoset : HSET := pr1 (pr1 (BinCoproductsHSET unitHSET unitHSET)).
+(* Local Definition twoset : HSET := pr1 (pr1 (BinCoproductsHSET unitHSET unitHSET)). *)
 
-Definition propset : HSET.
-mkpair.
-- apply hProp.
-- apply isasethProp.
-Defined.
-(* apply hProp_to_hSet. *)
-(* apply (∥ pr1 twoset ∥). *)
-(* Defined. *)
+Definition hPropSet : HSET := (hProp,,isasethProp).
 
-Local Definition falsemap : HSET⟦TerminalHSET,propset⟧.
+Local Definition falsemap : HSET⟦TerminalHSET,hPropSet⟧.
 Proof.
-intro x.
-apply hfalse.
+intro x; apply hfalse.
 Defined.
 
-Local Definition truemap : HSET⟦TerminalHSET,propset⟧.
+Local Definition truemap : HSET⟦TerminalHSET,hPropSet⟧.
 Proof.
-intro x.
-apply htrue.
+intro x; apply htrue.
 Defined.
 
 Definition hProp' : HSET.
 Proof.
 mkpair.
 - apply (Σ (P : hProp), P).
-- Search isaset total2.
-apply isaset_total2.
-apply isasethProp.
-
-intro x.
-apply isasetaprop.
-apply propproperty.
+- apply isaset_total2; [apply isasethProp|].
+  intro x; apply isasetaprop, propproperty.
 Defined.
-
 
 Lemma iscontrhProp' : iscontr (pr1 hProp').
 Proof.
-simpl.
 mkpair.
 - mkpair.
   + mkpair.
@@ -569,28 +553,17 @@ mkpair.
     * apply isapropunit.
  + apply tt.
 - intros [P hP].
-apply subtypeEquality.
-intro x.
-apply (pr2 x).
-simpl.
-apply subtypeEquality.
-intro x.
-apply isapropisaprop.
-simpl.
-apply (propositionalUnivalenceAxiom P unit (pr2 P) isapropunit).
-intro; apply tt.
-intro; apply hP.
-Defined.
-
-Lemma test : pr1 (pr1 TerminalHSET) ≃ pr1 hProp'.
-Proof.
-apply wequnittocontr, iscontrhProp'.
+  apply subtypeEquality; [intro x; apply (pr2 x)|].
+  apply subtypeEquality; [intro x; apply isapropisaprop|].
+  simpl.
+  apply (propositionalUnivalenceAxiom P unit (pr2 P) isapropunit).
+  + intro; apply tt.
+  + intro; apply hP.
 Defined.
 
 Lemma testiso : iso TerminalHSET hProp'.
 Proof.
-apply hset_equiv_iso.
-apply test.
+apply hset_equiv_iso, wequnittocontr, iscontrhProp'.
 Defined.
 
 (*
@@ -604,8 +577,9 @@ hProp  ----> hProp
 
 *)
 
-Definition from_hProp' : HSET ⟦ hProp', propset ⟧ := pr1.
+Definition hProp'_to_hPropSet : HSET⟦hProp',hPropSet⟧ := pr1.
 
+(* TODO: move *)
 Lemma TerminalArrowUnique {C : precategory} (T : Terminal C) (a : C)
   (f : C⟦a,TerminalObject T⟧) : f = TerminalArrow a.
 Proof.
@@ -617,26 +591,13 @@ Proof.
 apply TerminalArrowUnique.
 Defined.
 
-Lemma commutes : TerminalArrow hProp' ;; truemap = from_hProp' ;; identity propset.
+Lemma commutes : TerminalArrow hProp' ;; truemap = hProp'_to_hPropSet ;; identity hPropSet.
 Proof.
 rewrite <- temp, id_right.
-unfold compose; apply funextfun; intro x; simpl.
-unfold from_hProp'.
-unfold truemap.
-destruct x.
-simpl.
-destruct t.
-simpl in *.
-apply subtypeEquality.
-intro x.
-apply isapropisaprop.
-simpl.
-assert (H : iscontr t).
-apply (iscontraprop1 p0 p).
-Search unit iscontr.
-Search weq "inv".
-apply (invweq (univalence unit t)).
-apply (wequnittocontr H).
+apply funextfun; intros [[t p0] p]; simpl.
+apply subtypeEquality; [intro x; apply isapropisaprop|].
+(* Full univalence is probably not needed here *)
+apply (invweq (univalence unit t)), (wequnittocontr (iscontraprop1 p0 p)).
 Qed.
 
 Lemma HSET_monic_isincl A B (j : Monic HSET A B) : isincl (pr1 j).
@@ -648,83 +609,63 @@ assert (H : (λ _ : pr1 A, pr1 j a) = (λ _ : pr1 A, pr1 j b)).
 apply (toforallpaths _ _ _ (pr2 j A (fun _ => a) (fun _ => b) H) a).
 Defined.
 
-Definition to_hProp' U X (j : Monic HSET U X) : HSET⟦U,hProp'⟧.
+Definition U_to_hProp' U X (j : Monic HSET U X) : HSET⟦U,hProp'⟧.
 Proof.
-simpl.
 intro u.
 destruct j as [j Hj].
 mkpair.
 - mkpair.
   + apply (hfiber j (j u)).
-  +
-Search hfiber.
-assert (H : isaset (hfiber j (j u))).
-intros a b.
-apply isaproppathsfromisolated.
-unfold isisolated.
-intro.
-apply inl.
-destruct a. destruct x'.
-apply subtypeEquality.
-intro A.
-apply setproperty.
-simpl.
-rewrite <- p0 in p.
-apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
-unfold isaset in H.
-intros.
-apply iscontraprop1.
-apply H.
-destruct x.
-destruct x'.
-apply subtypeEquality.
-intro A.
-apply setproperty.
-simpl.
-rewrite <- p0 in p.
-apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
+  + (* This should be proved elsewhere *)
+    assert (H : isaset (hfiber j (j u))).
+    { intros [t p] b.
+      apply isaproppathsfromisolated; intros [t0 p0].
+      apply inl, subtypeEquality; [intro A; apply setproperty|].
+      simpl.
+      rewrite <- p0 in p.
+      apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
+    }
+    intros [t p] [t0 p0].
+    apply iscontraprop1; [apply H|].
+    (* This is the same proof as in the assert, refactor! *)
+    apply subtypeEquality; [intro A; apply setproperty|].
+    simpl.
+    rewrite <- p0 in p.
+    apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
 - apply (u,,idpath (j u)).
 Defined.
 
-Definition to_propset U X (j : Monic HSET U X) : HSET⟦X,propset⟧.
+Definition X_to_hPropSet U X (j : Monic HSET U X) : HSET⟦X,hPropSet⟧.
 Proof.
 intro x.
 destruct j as [j Hj].
-mkpair.
-apply (hfiber j x).
-
-assert (H : isaset (hfiber j x)).
-intros a b.
-apply isaproppathsfromisolated.
-unfold isisolated.
-intro.
-apply inl.
-destruct a. destruct x'.
-apply subtypeEquality.
-intro A.
-apply setproperty.
-simpl.
-rewrite <- p0 in p.
-apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
-unfold isaset in H.
-intros.
-apply iscontraprop1.
-apply H.
-destruct x0.
-destruct x'.
-apply subtypeEquality.
-intro A.
-apply setproperty.
-simpl.
-rewrite <- p0 in p.
-apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
+simple refine (tpair _ _ _).
+- apply (hfiber j x).
+- simpl.
+  (* Prove elsewhere! *)
+  assert (H : isaset (hfiber j x)).
+  { intros [t p] b.
+    apply isaproppathsfromisolated; intros [t0 p0].
+    apply inl, subtypeEquality; [intro A; apply setproperty|].
+    simpl.
+    rewrite <- p0 in p.
+    apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
+  }
+  (* This is the same proof as above! *)
+  intros [t p] [t0 p0].
+  apply iscontraprop1; [apply H|].
+  apply subtypeEquality; [intro A; apply setproperty|].
+  simpl.
+  rewrite <- p0 in p.
+  apply (invmaponpathsincl _ (HSET_monic_isincl _ _ (j,,Hj)) _ _ p).
 Defined.
 
-Definition hProp'_to_propset : HSET⟦hProp',propset⟧ := pr1.
 
 Lemma commutes2 U X (j : Monic HSET U X) :
-  to_hProp' U X j ;; hProp'_to_propset = j ;; to_propset U X j.
-Admitted.
+  j ;; X_to_hPropSet U X j = U_to_hProp' U X j ;; hProp'_to_hPropSet.
+Proof.
+now apply funextfun; intro x; destruct j.
+Qed.
 
 Lemma pullback2 U X (j : Monic HSET U X) :
   isPullback _ _ _ _ (commutes2 U X j).
@@ -732,15 +673,214 @@ Admitted.
 
 (* Lemma isPullbackGluedSquare : isPullback (i ;; f) g m (j ;; k) glueSquares. *)
 
+Lemma commutes3 U X (j : Monic HSET U X) :
+  j ;; (X_to_hPropSet U X j ;; identity hPropSet) =
+  (U_to_hProp' U X j ;; inv_from_iso testiso) ;; truemap.
+
+Proof.
+rewrite assoc, commutes2, <- !assoc.
+apply maponpaths, pathsinv0, commutes.
+Qed.
+
+
+(**  Diagram for next lemma
+
+               k           i'
+         d --------> c --------> c'
+         |           |           |
+         |h          | g         |g'
+         v           v           v
+         b --------> a --------> a'
+              f           i
+
+*)
+
+Lemma isPullback_iso_of_morphisms2 {C : precategory}
+     (hsC : has_homsets C)
+     {a b c d : C}
+     {f : C ⟦b, a⟧} {g : C ⟦c, a⟧} {h : C⟦d, b⟧} {k : C⟦d,c⟧}
+     (H : h ;; f = k ;; g)
+     (c' a' : C) (g' : C⟦c',a'⟧)
+     (i : C⟦a,a'⟧) (i' : C⟦c,c'⟧)
+     (xi : is_iso i) (xi' : is_iso i')
+     (Hi : g ;; i = i' ;; g')
+     (H' : h ;; (f ;; i) = (k ;; i') ;; g') (* this one is redundant *)
+   : isPullback _ _ _ _ H ->
+     isPullback _ _ _ _ H'.
+Admitted.
+
+Lemma testequiv (B : UU) :
+  (Σ (A : UU), Σ (f : A -> B), Π (b : B), isaprop (hfiber f b)) ≃
+  (B -> hProp).
+Admitted.
+
 Definition SubobjectClassifierHSET : SubobjectClassifier HSET TerminalHSET.
 Proof.
 apply (mk_SubobjectClassifier _ _ truemap).
 intros U X j.
-mkpair.
+use unique_exists.
+- apply (X_to_hPropSet U X j ;; identity _).
 -
+simpl.
+assert (H : U_to_hProp' U X j ;; inv_from_iso testiso = TerminalArrow U).
+  apply TerminalArrowUnique.
+rewrite <- H.
 simple refine (tpair _ _ _).
-+ apply (to_propset U X j).
-+ mkpair.
+apply commutes3.
+simpl.
+apply (@isPullback_iso_of_morphisms2 HSET has_homsets_HSET hPropSet X hProp' U (X_to_hPropSet U X j) (hProp'_to_hPropSet) j (U_to_hProp' U X j) (commutes2 U X j) TerminalHSET hPropSet truemap (identity _) (inv_from_iso testiso)).
+apply identity_is_iso.
+apply is_iso_inv_from_iso.
+rewrite temp.
+rewrite commutes.
+apply idpath.
+apply pullback2.
+-
+intro x.
+apply invproofirrelevance.
+intros a b.
+destruct a.
+destruct b.
+simpl.
+destruct (has_homsets_HSET _ _ _ _ t t0).
+destruct t1.
+destruct (isaprop_isPullback _ _ _ _ _ p p0).
+destruct t0.
+apply idpath.
+-
+intros.
+Check impred.
+Search iscontr isofhlevel.
+destruct j.
+unfold isMonic in p.
+generalize (commutes2 U X j).
+
+
+
+rewrite id_right.
+simpl in *.
+destruct j as [j Hj].
+apply funextfun; intro x.
+apply subtypeEquality.
+intro; apply isapropisaprop.
+simpl.
+destruct X0.
+
+unfold isPullback in p.
+simpl in *.
+(* weqonpathsincl *)
+Check (hfiber j x).
+
+
+apply propositionalUnivalenceAxiom.
+
+apply propproperty.
+admit.
+admit.
+intro XX.
+destruct XX.
+rewrite <- p0.
+Search isincl.
+Se
+apply propproperty.
+intro h.
+simpl.
+unfold hfiber.
+simpl in *.
+destruct X0.
+simpl in *.
+admit.
+simpl.
+destruct j; simpl.
+unfold hfiber.
+destruct X0.
+
+unfold propositionalUnivalenceStatement.
+Search "Univalence".
+Check (y x).
+destruct j.
+simpl.
+simpl.
+unfold hfiber.
+
+simpl.
+Search hfiber.
+unfold compose, identity, X_to_hPropSet.
+simpl.
+destruct (y x).
+
+
+exists (idpath _).
+intro p'.
+Check (maponpaths pr2 p').
+
+assert (p' = (maponpaths pr1 p',,maponpaths pr2 p')).
+Search maponpaths.
+generalize (p1 (maponpaths pr1 p')).
+simpl.
+Search paths total2.
+Check (@tppr).
+apply
+Search
+destruct p'.
+Search idpath total2.
+destruct p'.
+apply idpath.
+Search isaprop isPullback.
+
+Search iscontr total2.
+apply iscontraprop1.
+admit.
+aply
+Search iscontr.
+
+destruct x.
+destruct p.
+simpl.
+apply subtypeEquality.
+intros a.
+Check isaprop_total2.
+Search isaprop total2.
+intros w aa.
+simpl.
+destruct w.
+destruct aa.
+simpl in *.
+simpl.
+apply subtypeEquality.
+
+admit.
+simpl.
+destruct x.
+simpl.
+apply funextfun; intro x.
+Search iscontr isaprop.
+Print hProp.
+Check (t x).
+destruct t.
+unfold compose; simpl.
+unfold identity.
+simpl.
+unfold X_to_hPropSet.
+destruct j.
+simpl.
+apply
+simpl
+apply idpath.
+simpl.
+simpl.
+Search is_iso inv_from_iso.
+
+simpl.
+generalize (pullback2 U X j).
+
+
+mkpair.
+apply commutes3.
+
+simpl.
+
+
 rewrite <- commutes2.
 admit.
 admit.
