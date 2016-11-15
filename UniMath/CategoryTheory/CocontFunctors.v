@@ -1510,6 +1510,7 @@ Definition omega_cocont_BinProduct_of_functors (F G : omega_cocont_functor C D) 
 
 End BinProduct_of_functors.
 
+
 (** ** Precomposition functor is cocontinuous *)
 Section pre_composition_functor.
 
