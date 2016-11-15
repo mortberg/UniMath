@@ -1,0 +1,34 @@
+#!/bin/bash
+
+FILES="UniMath/CategoryTheory/CocontFunctors.v
+       UniMath/CategoryTheory/EquivalencesExamples.v
+       UniMath/CategoryTheory/FunctorAlgebras.v
+       UniMath/CategoryTheory/Inductives/LambdaCalculus.v
+       UniMath/CategoryTheory/Inductives/Lists.v
+       UniMath/CategoryTheory/Inductives/Trees.v
+       UniMath/CategoryTheory/Monads.v
+       UniMath/CategoryTheory/ProductPrecategory.v
+       UniMath/CategoryTheory/RightKanExtension.v
+       UniMath/CategoryTheory/category_hset.v
+       UniMath/CategoryTheory/category_hset_structures.v
+       UniMath/CategoryTheory/covyoneda.v
+       UniMath/CategoryTheory/limits/bincoproducts.v
+       UniMath/CategoryTheory/limits/binproducts.v
+       UniMath/CategoryTheory/limits/cats/limits.v
+       UniMath/CategoryTheory/limits/coproducts.v
+       UniMath/CategoryTheory/limits/graphs/colimits.v
+       UniMath/CategoryTheory/limits/graphs/limits.v
+       UniMath/CategoryTheory/limits/products.v
+       UniMath/Foundations/Combinatorics/Lists.v
+       UniMath/SubstitutionSystems/BinProductOfSignatures.v
+       UniMath/SubstitutionSystems/BindingSigToMonad.v
+       UniMath/SubstitutionSystems/LamFromBindingSig.v
+       UniMath/SubstitutionSystems/LamHSET.v
+       UniMath/SubstitutionSystems/MLTT79.v
+       UniMath/SubstitutionSystems/SignatureCategory.v
+       UniMath/SubstitutionSystems/SignatureExamples.v
+       UniMath/SubstitutionSystems/SumOfSignatures.v"
+
+sub/coq/bin/coqwc -e $FILES
+
+exit 0
