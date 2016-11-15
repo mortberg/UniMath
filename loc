@@ -31,4 +31,17 @@ FILES="UniMath/CategoryTheory/CocontFunctors.v
 
 sub/coq/bin/coqwc -e $FILES
 
+DEFS=`grep Definition $FILES | wc -l`
+INDUCTIVES=`grep Inductive $FILES | wc -l`
+LEMMAS=`grep Lemma $FILES | wc -l`
+PROOF=`grep Proof $FILES | wc -l`
+THEOREMS=`grep Theorem $FILES | wc -l`
+
+echo
+echo Number of Definition: $DEFS
+echo Number of Inductive: $INDUCTIVES
+echo Number of Lemma: $LEMMAS
+echo Number of Theorem: $THEOREMS
+echo Number of Proof: $PROOF
+
 exit 0
