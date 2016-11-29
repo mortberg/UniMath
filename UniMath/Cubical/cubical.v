@@ -9,11 +9,15 @@ Require Import UniMath.CategoryTheory.UnicodeNotations.
 Require Import UniMath.CategoryTheory.category_hset.
 Require Import UniMath.CategoryTheory.category_hset_structures.
 Require Import UniMath.CategoryTheory.opp_precat.
+Require Import UniMath.CategoryTheory.whiskering.
 
 Local Notation "# F" := (functor_on_morphisms F) (at level 3).
 Local Notation "[ C , D , hs ]" := (functor_precategory C D hs).
 Local Notation "C '^op'" := (opp_precat C) (at level 3, format "C ^op").
-Local Notation "'PSh' C" := [C^op,HSET,has_homsets_HSET] (at level 3).
+Local Notation "'PSh' C" := (* (functor (opp_precat C) HSET) (at level 3). *)
+  [C^op,HSET,has_homsets_HSET] (at level 3).
+Arguments nat_trans_comp {_ _ _ _ _} _ _.
+Local Notation "α • β" := (nat_trans_comp α β) (at level 50, format "α  •  β", left associativity).
 
 (** Category of elements of a presheaf *)
 Section cat_of_elems_def.
@@ -22,29 +26,38 @@ Context {C : precategory} (hsC : has_homsets C) (F : PSh C).
 
 Definition cat_of_elems_ob_mor : precategory_ob_mor.
 Proof.
-simpl in *.
-mkpair.
-- apply (Σ (c : C), F c : hSet).
-- intros a b.
-  apply (Σ (f : C^op⟦pr1 b,pr1 a⟧), # F f (pr2 b) = pr2 a).
+exists (Σ (c : C), pr1 F c : hSet).
+intros a b.
+apply (Σ (f : C⟦pr1 a,pr1 b⟧), # (pr1 F) f (pr2 b) = pr2 a).
 Defined.
+
+Definition cat_of_elems_data : precategory_data.
+Proof.
+exists cat_of_elems_ob_mor.
+split.
++ intros a.
+  exists (identity _).
+  abstract (now rewrite (functor_id F)).
++ intros a b c f g.
+  exists (pr1 f ;; pr1 g).
+  abstract (eapply pathscomp0;
+      [apply (toforallpaths _ _ _ (functor_comp F _ _ _ (pr1 g) (pr1 f)) (pr2 c))|];
+      eapply pathscomp0; [|apply (pr2 f)]; cbn;
+      apply maponpaths, (pr2 g)).
+Defined.
+
+Lemma eq_mor_cat_of_elems (a b : cat_of_elems_data) (f g : _ ⟦a,b⟧) :
+  pr1 f = pr1 g → f = g.
+Proof.
+now apply subtypeEquality; intros x; apply setproperty.
+Qed.
 
 Definition cat_of_elems : precategory.
 Proof.
-mkpair.
-- apply (tpair _ cat_of_elems_ob_mor).
-  split.
-  + intros a.
-    exists (identity _).
-    abstract (now rewrite (functor_id F)).
-  + intros a b c f g.
-    exists (pr1 g ;; pr1 f).
-    abstract (rewrite functor_comp; cbn;
-              eapply pathscomp0; [apply maponpaths, (pr2 g)|];
-              apply (pr2 f)).
-- abstract (repeat split; intros;
-            apply subtypeEquality; try (intro; apply setproperty); simpl;
-              [ apply id_left | apply id_right | apply assoc]).
+exists cat_of_elems_data.
+abstract (repeat split; intros;
+          apply subtypeEquality; try (intro; apply setproperty); simpl;
+            [ apply id_left | apply id_right | apply assoc]).
 Defined.
 
 Lemma has_homsets_cat_of_elems : has_homsets cat_of_elems.
@@ -63,40 +76,27 @@ Section cat_of_elems_theory.
 
 Context {C : precategory} (hsC : has_homsets C) (F G : PSh C).
 
-Lemma eq_mor_cat_of_elems (a b : ∫ F) (f g : ∫ F ⟦a,b⟧) :
-  pr1 f = pr1 g → f = g.
-Proof.
-now apply subtypeEquality; intros x; apply setproperty.
-Qed.
-
 Definition nat_trans_cat_of_elems (α : nat_trans (pr1 F) (pr1 G)) : functor (∫ F) (∫ G).
 Proof.
 mkpair.
 - mkpair.
   + intros X; apply (pr1 X,, α (pr1 X) (pr2 X)).
-+ intros a b f.
-exists (pr1 f).
-simpl.
-generalize (toforallpaths _ _ _ (nat_trans_ax α _ _ (pr1 f)) (pr2 b)); unfold compose.
-simpl.
-intros HH.
-eapply pathscomp0.
-eapply pathsinv0.
-apply HH.
-apply maponpaths.
-apply (pr2 f).
--
-split.
-intros x.
-simpl.
-apply subtypeEquality; trivial.
-intro xx.
-apply setproperty.
-intros a b c f g.
-apply subtypeEquality; trivial.
-intro xx.
-apply setproperty.
-Admitted.
+  + intros a b f.
+    exists (pr1 f).
+    abstract (
+      eapply pathscomp0;
+        [ eapply pathsinv0,
+                 (toforallpaths _ _ _ (nat_trans_ax α _ _ (pr1 f)) (pr2 b)) |];
+      unfold compose; simpl; apply maponpaths, (pr2 f)).
+- abstract (now split; intros ?; intros; apply eq_mor_cat_of_elems).
+Defined.
+
+Definition subst_functor (α : nat_trans (pr1 F) (pr1 G)) :
+  functor (PSh (∫ G)) (PSh (∫ F)).
+Proof.
+apply (pre_composition_functor _ _ _ (has_homsets_opp (has_homsets_cat_of_elems hsC G))).
+now apply functor_opp, nat_trans_cat_of_elems.
+Defined.
 
 End cat_of_elems_theory.
 
@@ -108,9 +108,11 @@ Definition TypeIn (Γ : PSh C) : UU := PSh (∫ Γ).
 
 Local Notation "Γ ⊢" := (TypeIn Γ) (at level 3).
 
-Lemma test (Γ Δ : PSh C) (σ : nat_trans (pr1 Δ) (pr1 Γ)) (A : Γ ⊢) : Δ ⊢.
+(* Given Γ ⊢ A and a substitution σ : Δ → Γ we get Δ ⊢ Aσ *)
+Lemma subst_type (Γ Δ : PSh C) (σ : nat_trans (pr1 Δ) (pr1 Γ)) (A : Γ ⊢) : Δ ⊢.
 Proof.
-Admitted.
+apply (subst_functor hsC _ _ σ A).
+Defined.
 
 End types.
 
@@ -130,9 +132,9 @@ Proof.
 mkpair.
 - mkpair.
   + intro I.
-    apply (Γ (F I)).
+    apply (pr1 Γ (F I)).
   + simpl; intros I J f.
-    apply (# Γ (# F f)).
+    apply (# (pr1 Γ) (# F f)).
 - split.
   + now intros I; simpl; rewrite (functor_id F), (functor_id Γ).
   + intros I J K f g; simpl in *.
@@ -143,25 +145,25 @@ Defined.
 
 Local Notation "'Γ+'" := Γplus.
 
-Definition p : nat_trans Γ Γ+.
+Definition p : nat_trans (pr1 Γ) (pr1 Γ+).
 mkpair.
-- simpl; intro I; apply (# Γ (p_F I)).
+- simpl; intro I; apply (# (pr1 Γ)  (p_F I)).
 - intros I J f; simpl in *; rewrite <- !(functor_comp Γ).
   now apply maponpaths, pathsinv0, (nat_trans_ax p_F).
 Defined.
 
-Definition f0 : nat_trans Γ+ Γ.
+Definition f0 : nat_trans (pr1 Γ+) (pr1 Γ).
 Proof.
 mkpair.
-- simpl; intro I; apply (# Γ (e0 I)).
+- simpl; intro I; apply (# (pr1 Γ) (e0 I)).
 - intros I J f; simpl in *; rewrite <- !(functor_comp Γ).
   now apply maponpaths, pathsinv0, (nat_trans_ax e0).
 Defined.
 
-Definition f1 : nat_trans Γ+ Γ.
+Definition f1 : nat_trans (pr1 Γ+) (pr1 Γ).
 Proof.
 mkpair.
-- simpl; intro I; apply (# Γ (e1 I)).
+- simpl; intro I; apply (# (pr1 Γ) (e1 I)).
 - intros I J f; simpl in *; rewrite <- !(functor_comp Γ).
   now apply maponpaths, pathsinv0, (nat_trans_ax e1).
 Defined.
@@ -169,47 +171,10 @@ Defined.
 Local Notation "'[0]'" := f0.
 Local Notation "'[1]'" := f1.
 
-Arguments nat_trans_comp {_ _ _ _ _} _ _.
-Local Notation "α • β" := (nat_trans_comp α β) (at level 50, format "α  •  β", left associativity).
+Hypothesis (Hpe0 : e0 • p_F = nat_trans_id Id).
+Hypothesis (Hpe1 : e1 • p_F = nat_trans_id Id).
 
-Section version1.
-Hypothesis (Hpe0 : p_F • e0 = nat_trans_id F).
-Hypothesis (Hpe1 : p_F • e1 = nat_trans_id F).
-
-Lemma pf0 : [0] • p = nat_trans_id Γ+.
-Proof.
-apply (nat_trans_eq has_homsets_HSET).
-simpl; intro I.
-assert (H := nat_trans_eq_pointwise Hpe0 I).
-simpl in H.
-assert (H1 : # Γ (e0 I) ;; # Γ (p_F I) = # Γ (identity (F I))).
-rewrite <- H.
-apply pathsinv0.
-apply (functor_comp Γ).
-rewrite (functor_id Γ) in H1.
-apply H1.
-Qed.
-
-Lemma pf1 : [1] • p = nat_trans_id Γ+.
-Proof.
-apply (nat_trans_eq has_homsets_HSET).
-simpl; intro I.
-assert (H := nat_trans_eq_pointwise Hpe1 I).
-simpl in H.
-assert (H1 : # Γ (e1 I) ;; # Γ (p_F I) = # Γ (identity (F I))).
-rewrite <- H.
-apply pathsinv0.
-apply (functor_comp Γ).
-rewrite (functor_id Γ) in H1.
-apply H1.
-Qed.
-End version1.
-
-Section version2.
-Hypothesis (Hpe0 : e0 • p_F = nat_trans_id _).
-Hypothesis (Hpe1 : e1 • p_F = nat_trans_id _).
-
-Lemma pf0' : p • [0] = nat_trans_id Γ.
+Lemma pf0 : p • [0] = identity Γ.
 Proof.
 apply (nat_trans_eq has_homsets_HSET).
 simpl; intro I.
@@ -223,7 +188,7 @@ unfold compose; simpl.
 now rewrite H.
 Qed.
 
-Lemma pf1' : p • [1] = nat_trans_id Γ.
+Lemma pf1 : p • [1] = identity Γ.
 Proof.
 apply (nat_trans_eq has_homsets_HSET).
 simpl; intro I.
@@ -237,5 +202,37 @@ unfold compose; simpl.
 now rewrite H.
 Qed.
 
-End version2.
+(* Section alternative_version. *)
+(* Hypothesis (Hpe0 : p_F • e0 = nat_trans_id F). *)
+(* Hypothesis (Hpe1 : p_F • e1 = nat_trans_id F). *)
+
+(* Lemma pf0 : [0] • p = nat_trans_id Γ+. *)
+(* Proof. *)
+(* apply (nat_trans_eq has_homsets_HSET). *)
+(* simpl; intro I. *)
+(* assert (H := nat_trans_eq_pointwise Hpe0 I). *)
+(* simpl in H. *)
+(* assert (H1 : # Γ (e0 I) ;; # Γ (p_F I) = # Γ (identity (F I))). *)
+(* rewrite <- H. *)
+(* apply pathsinv0. *)
+(* apply (functor_comp Γ). *)
+(* rewrite (functor_id Γ) in H1. *)
+(* apply H1. *)
+(* Qed. *)
+
+(* Lemma pf1 : [1] • p = nat_trans_id Γ+. *)
+(* Proof. *)
+(* apply (nat_trans_eq has_homsets_HSET). *)
+(* simpl; intro I. *)
+(* assert (H := nat_trans_eq_pointwise Hpe1 I). *)
+(* simpl in H. *)
+(* assert (H1 : # Γ (e1 I) ;; # Γ (p_F I) = # Γ (identity (F I))). *)
+(* rewrite <- H. *)
+(* apply pathsinv0. *)
+(* apply (functor_comp Γ). *)
+(* rewrite (functor_id Γ) in H1. *)
+(* apply H1. *)
+(* Qed. *)
+(* End alternative_version. *)
+
 End cubical.
