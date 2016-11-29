@@ -10,6 +10,9 @@ Require Import UniMath.CategoryTheory.category_hset.
 Require Import UniMath.CategoryTheory.category_hset_structures.
 Require Import UniMath.CategoryTheory.opp_precat.
 Require Import UniMath.CategoryTheory.whiskering.
+Require Import UniMath.CategoryTheory.equivalences.
+Require Import UniMath.CategoryTheory.RightKanExtension.
+Require Import UniMath.CategoryTheory.limits.graphs.limits.
 
 Local Notation "# F" := (functor_on_morphisms F) (at level 3).
 Local Notation "[ C , D , hs ]" := (functor_precategory C D hs).
@@ -97,6 +100,15 @@ Proof.
 apply (pre_composition_functor _ _ _ (has_homsets_opp (has_homsets_cat_of_elems hsC G))).
 now apply functor_opp, nat_trans_cat_of_elems.
 Defined.
+
+Lemma is_left_adjoint_subst_functor (α : nat_trans (pr1 F) (pr1 G)) :
+  is_left_adjoint (subst_functor α).
+Proof.
+now apply RightKanExtension_from_limits, LimsHSET.
+Defined.
+
+Definition pi (α : nat_trans (pr1 F) (pr1 G)) :=
+   right_adjoint (is_left_adjoint_subst_functor α).
 
 End cat_of_elems_theory.
 
