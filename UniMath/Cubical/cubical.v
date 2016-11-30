@@ -11,8 +11,10 @@ Require Import UniMath.CategoryTheory.category_hset_structures.
 Require Import UniMath.CategoryTheory.opp_precat.
 Require Import UniMath.CategoryTheory.whiskering.
 Require Import UniMath.CategoryTheory.equivalences.
+Require Import UniMath.CategoryTheory.AdjunctionHomTypesWeq.
 Require Import UniMath.CategoryTheory.RightKanExtension.
 Require Import UniMath.CategoryTheory.limits.graphs.limits.
+Require Import UniMath.CategoryTheory.limits.graphs.pullbacks.
 
 Local Notation "# F" := (functor_on_morphisms F) (at level 3).
 Local Notation "[ C , D , hs ]" := (functor_precategory C D hs).
@@ -95,21 +97,8 @@ mkpair.
 - abstract (now split; intros ?; intros; apply eq_mor_cat_of_elems).
 Defined.
 
-Lemma nat_trans_cat_of_elems_id
-  {F : PSh C} : nat_trans_cat_of_elems (nat_trans_id (pr1 F)) = functor_identity _.
-Proof.
-apply functor_eq.
-apply has_homsets_cat_of_elems, hsC.
-simpl.
-eapply total2_paths.
-Unshelve.
-Focus 2.
-simpl.
-apply funextsec; intros [x Fx]; apply idpath.
-simpl.
-Search transportf.
-Admitted.
-
+(* Lemma nat_trans_cat_of_elems_id *)
+(*   {F : PSh C} : nat_trans_cat_of_elems (nat_trans_id (pr1 F)) = functor_identity _. *)
 
 Definition subst_functor {F G : PSh C} (α : nat_trans (pr1 F) (pr1 G)) :
   functor (PSh (∫ G)) (PSh (∫ F)).
@@ -121,17 +110,18 @@ Defined.
 Lemma is_left_adjoint_subst_functor {F G : PSh C} (α : nat_trans (pr1 F) (pr1 G)) :
   is_left_adjoint (subst_functor α).
 Proof.
-apply RightKanExtension_from_limits, LimsHSET.
+use (RightKanExtension_from_limits _ _ _ LimsHSET). (* apply is slow here... *)
 Defined.
 
-Definition pi (α : nat_trans (pr1 F) (pr1 G)) :=
+(* This name is maybe not very good *)
+Definition π {F G : PSh C} (α : nat_trans (pr1 F) (pr1 G)) :=
    right_adjoint (is_left_adjoint_subst_functor α).
 
 End cat_of_elems_theory.
 
 Section types.
 
-Variables (C : precategory) (hsC : has_homsets C).
+Context {C : precategory} (hsC : has_homsets C).
 
 Definition TypeIn (Γ : PSh C) : UU := PSh (∫ Γ).
 
@@ -140,26 +130,51 @@ Local Notation "Γ ⊢" := (TypeIn Γ) (at level 3).
 (* Given Γ ⊢ A and a substitution σ : Δ → Γ we get Δ ⊢ Aσ *)
 Lemma subst_type {Γ Δ : PSh C} (A : Γ ⊢) (σ : nat_trans (pr1 Δ) (pr1 Γ)) : Δ ⊢.
 Proof.
-apply (subst_functor hsC _ _ σ A).
+apply (subst_functor hsC σ A).
 Defined.
 
-Lemma subst_type_id (Γ : PSh C) (A : Γ ⊢) :
-  subst_type A (nat_trans_id (pr1 Γ)) = A.
-Proof.
-apply (functor_eq _ _ has_homsets_HSET); simpl.
-unfold nat_trans_cat_of_elems.
-simpl.
-
-
-
-unfold nat_trans_id.
-simpl.
-cbn.
-
-
-Defined.
+(* Lemma subst_type_id (Γ : PSh C) (A : Γ ⊢) : *)
+(*   subst_type A (nat_trans_id (pr1 Γ)) = A. *)
 
 End types.
+
+Section Glue.
+
+Local Notation "Γ ⊢" := (TypeIn Γ) (at level 3).
+
+Variables (C : precategory) (hsC : has_homsets C).
+Variables (Γ Δ : PSh C) (σ : nat_trans (pr1 Δ) (pr1 Γ)).
+
+Variables (A : Γ ⊢) (T : Δ ⊢).
+
+Let Aσ : Δ ⊢ := subst_type hsC A σ.
+
+Variables (w : nat_trans (pr1 T) (pr1 Aσ)).
+
+(* This should be proved more directly for efficiency *)
+Lemma temp : Pullbacks [(∫ Γ)^op, HSET, has_homsets_HSET].
+Proof.
+apply Pullbacks_from_Lims, LimsFunctorCategory, LimsHSET.
+Defined.
+
+Definition Glue' : Γ ⊢.
+Proof.
+set (πAσ := π hsC σ Aσ : PSh (∫ Γ)).
+set (πT := π hsC σ T : PSh (∫ Γ)).
+assert (f1 : _⟦πT,πAσ⟧).
+set (FF := π (has_homsets_cat_of_elems hsC _) w).
+  apply (@φ_adj _ _ _ (is_left_adjoint_subst_functor hsC σ)).
+generalize (unit_from_left_adjoint (is_left_adjoint_subst_functor hsC σ)).
+unfold πT.
+unfold π.
+(* apply w. *)
+  admit.
+transparent assert (f2 : (_⟦A,πAσ⟧)).
+  apply (φ_adj _ _ _ (is_left_adjoint_subst_functor hsC σ) (identity _)).
+apply (PullbackObject _ (temp _ _ _ f1 f2)).
+Admitted.
+
+End Glue.
 
 Section cubical.
 
