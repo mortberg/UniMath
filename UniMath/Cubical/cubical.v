@@ -77,9 +77,10 @@ Local Notation "∫ F" := (cat_of_elems F) (at level 3).
 
 Section cat_of_elems_theory.
 
-Context {C : precategory} (hsC : has_homsets C) (F G : PSh C).
+Context {C : precategory} (hsC : has_homsets C).
 
-Definition nat_trans_cat_of_elems (α : nat_trans (pr1 F) (pr1 G)) : functor (∫ F) (∫ G).
+Definition nat_trans_cat_of_elems
+  {F G : PSh C} (α : nat_trans (pr1 F) (pr1 G)) : functor (∫ F) (∫ G).
 Proof.
 mkpair.
 - mkpair.
@@ -94,17 +95,33 @@ mkpair.
 - abstract (now split; intros ?; intros; apply eq_mor_cat_of_elems).
 Defined.
 
-Definition subst_functor (α : nat_trans (pr1 F) (pr1 G)) :
+Lemma nat_trans_cat_of_elems_id
+  {F : PSh C} : nat_trans_cat_of_elems (nat_trans_id (pr1 F)) = functor_identity _.
+Proof.
+apply functor_eq.
+apply has_homsets_cat_of_elems, hsC.
+simpl.
+eapply total2_paths.
+Unshelve.
+Focus 2.
+simpl.
+apply funextsec; intros [x Fx]; apply idpath.
+simpl.
+Search transportf.
+Admitted.
+
+
+Definition subst_functor {F G : PSh C} (α : nat_trans (pr1 F) (pr1 G)) :
   functor (PSh (∫ G)) (PSh (∫ F)).
 Proof.
 apply (pre_composition_functor _ _ _ (has_homsets_opp (has_homsets_cat_of_elems hsC G))).
 now apply functor_opp, nat_trans_cat_of_elems.
 Defined.
 
-Lemma is_left_adjoint_subst_functor (α : nat_trans (pr1 F) (pr1 G)) :
+Lemma is_left_adjoint_subst_functor {F G : PSh C} (α : nat_trans (pr1 F) (pr1 G)) :
   is_left_adjoint (subst_functor α).
 Proof.
-now apply RightKanExtension_from_limits, LimsHSET.
+apply RightKanExtension_from_limits, LimsHSET.
 Defined.
 
 Definition pi (α : nat_trans (pr1 F) (pr1 G)) :=
@@ -121,9 +138,25 @@ Definition TypeIn (Γ : PSh C) : UU := PSh (∫ Γ).
 Local Notation "Γ ⊢" := (TypeIn Γ) (at level 3).
 
 (* Given Γ ⊢ A and a substitution σ : Δ → Γ we get Δ ⊢ Aσ *)
-Lemma subst_type (Γ Δ : PSh C) (σ : nat_trans (pr1 Δ) (pr1 Γ)) (A : Γ ⊢) : Δ ⊢.
+Lemma subst_type {Γ Δ : PSh C} (A : Γ ⊢) (σ : nat_trans (pr1 Δ) (pr1 Γ)) : Δ ⊢.
 Proof.
 apply (subst_functor hsC _ _ σ A).
+Defined.
+
+Lemma subst_type_id (Γ : PSh C) (A : Γ ⊢) :
+  subst_type A (nat_trans_id (pr1 Γ)) = A.
+Proof.
+apply (functor_eq _ _ has_homsets_HSET); simpl.
+unfold nat_trans_cat_of_elems.
+simpl.
+
+
+
+unfold nat_trans_id.
+simpl.
+cbn.
+
+
 Defined.
 
 End types.
