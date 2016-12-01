@@ -161,18 +161,13 @@ Definition Glue' : Γ ⊢.
 Proof.
 set (πAσ := π hsC σ Aσ : PSh (∫ Γ)).
 set (πT := π hsC σ T : PSh (∫ Γ)).
-assert (f1 : _⟦πT,πAσ⟧).
-set (FF := π (has_homsets_cat_of_elems hsC _) w).
-  apply (@φ_adj _ _ _ (is_left_adjoint_subst_functor hsC σ)).
-generalize (unit_from_left_adjoint (is_left_adjoint_subst_functor hsC σ)).
-unfold πT.
-unfold π.
-(* apply w. *)
-  admit.
+transparent assert (f1 : (_⟦πT,πAσ⟧)).
+  apply (φ_adj _ _ _ (is_left_adjoint_subst_functor hsC σ)).
+  apply (nat_trans_comp (counit_from_left_adjoint (is_left_adjoint_subst_functor hsC σ) T) w).
 transparent assert (f2 : (_⟦A,πAσ⟧)).
   apply (φ_adj _ _ _ (is_left_adjoint_subst_functor hsC σ) (identity _)).
 apply (PullbackObject _ (temp _ _ _ f1 f2)).
-Admitted.
+Defined.
 
 End Glue.
 
