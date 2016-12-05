@@ -133,8 +133,23 @@ Proof.
 apply (subst_functor hsC σ A).
 Defined.
 
-(* Lemma subst_type_id (Γ : PSh C) (A : Γ ⊢) : *)
-(*   subst_type A (nat_trans_id (pr1 Γ)) = A. *)
+Lemma subst_type_id (Γ : PSh C) (A : Γ ⊢) :
+  subst_type A (nat_trans_id (pr1 Γ)) = A.
+Proof.
+apply functor_eq.
+apply has_homsets_HSET.
+simpl.
+assert (foo : pr1 (functor_composite_data
+    (functor_opp_data (nat_trans_cat_of_elems (nat_trans_id (pr1 Γ)))) (pr1 A)) =
+  pr1 (pr1 A)).
+cbn.
+apply funextfun; intro a.
+apply maponpaths.
+apply pathsinv0.
+apply tppr.
+apply (total2_paths foo).
+cbn.
+
 
 End types.
 
@@ -152,7 +167,7 @@ Let Aσ : Δ ⊢ := subst_type hsC A σ.
 Variables (w : nat_trans (pr1 T) (pr1 Aσ)).
 
 (* This should be proved more directly for efficiency *)
-Lemma temp : Pullbacks [(∫ Γ)^op, HSET, has_homsets_HSET].
+Lemma PullbacksPSh : Pullbacks [(∫ Γ)^op, HSET, has_homsets_HSET].
 Proof.
 apply Pullbacks_from_Lims, LimsFunctorCategory, LimsHSET.
 Defined.
@@ -166,7 +181,7 @@ transparent assert (f1 : (_⟦πT,πAσ⟧)).
   apply (nat_trans_comp (counit_from_left_adjoint (is_left_adjoint_subst_functor hsC σ) T) w).
 transparent assert (f2 : (_⟦A,πAσ⟧)).
   apply (φ_adj _ _ _ (is_left_adjoint_subst_functor hsC σ) (identity _)).
-apply (PullbackObject _ (temp _ _ _ f1 f2)).
+apply (PullbackObject _ (PullbacksPSh _ _ _ f1 f2)).
 Defined.
 
 End Glue.
