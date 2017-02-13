@@ -1,3 +1,4 @@
+Require Import UniMath.Foundations.Basics.PartB.
 Require Import UniMath.Foundations.Basics.PartD.
 Require Import UniMath.Foundations.Basics.Propositions.
 Require Import UniMath.Foundations.Basics.Sets.
@@ -23,6 +24,51 @@ Local Notation "'PSh' C" := (* (functor (opp_precat C) HSET) (at level 3). *)
   [C^op,HSET,has_homsets_HSET] (at level 3).
 Arguments nat_trans_comp {_ _ _ _ _} _ _.
 Local Notation "α • β" := (nat_trans_comp α β) (at level 50, format "α  •  β", left associativity).
+
+(** Subobject classifier in a presheaf *)
+Section omega_psh.
+
+Context {C : precategory}.
+
+Definition sieve_def (c : C) : UU.
+Proof.
+  use total2.
+  - apply (Π (x : C) (f : C⟦x,c⟧), hProp).
+  - intros S.
+    apply (Π (x : C) (f : C⟦x,c⟧), S x f → Π (y : C) (f' : C⟦y,x⟧), S y (f' ;; f)).
+Defined.
+
+Lemma isaset_sieve (c : C) : isaset (sieve_def c).
+Proof.
+use isaset_total2.
+- repeat (apply impred_isaset; intro); apply isasethProp.
+- intros S; simpl; repeat (apply impred_isaset; intro); apply isasetaprop, propproperty.
+Qed.
+
+Definition sieve (c : C) : HSET := (sieve_def c,,isaset_sieve c).
+
+Definition omega_psh : PSh C.
+Proof.
+use mk_functor.
+- mkpair.
+  + apply sieve.
+  + simpl; intros a b f [S hS].
+    mkpair.
+    * intros y g.
+      apply (S y (g ;; f)).
+    * abstract (intros y g H z h; simpl; rewrite <- assoc; apply hS, H).
+- split.
+  + intros x; apply funextfun; intros [S hS]; simpl.
+    apply subtypeEquality; simpl.
+    * intros X; repeat (apply impred; intro); apply propproperty.
+    * now repeat (apply funextsec; intro); rewrite id_right.
+  + intros x y z f g; apply funextfun; intros [S hS]; simpl.
+    apply subtypeEquality; simpl.
+    * intros X; repeat (apply impred; intro); apply propproperty.
+    * now repeat (apply funextsec; intro); rewrite <- assoc.
+Defined.
+
+End omega_psh.
 
 (** Category of elements of a presheaf *)
 Section cat_of_elems_def.
