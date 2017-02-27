@@ -3,6 +3,7 @@
 Require Import UniMath.Foundations.PartD.
 Require Import UniMath.Foundations.Propositions.
 Require Import UniMath.Foundations.Sets.
+Require Import UniMath.Algebra.Lattice.
 
 Require Import UniMath.CategoryTheory.precategories.
 Require Import UniMath.CategoryTheory.functor_categories.
@@ -75,7 +76,7 @@ Context {C : precategory} (hsC : has_homsets C).
 
 (** Equivalence classes of subobjects defined by identifying monos into c
     with isomorphic source *)
-Definition SubObj (c : C) : HSET :=
+Definition SubObj (c : C) : hSet :=
   hSetpair (setquot (iso_eqrel (SubobjectsPrecategory hsC c))) (isasetsetquot _).
 
 (* For f and g monics into c: f <= g := exists h, f = h ;; g *)
@@ -169,7 +170,8 @@ Qed.
 
 Lemma isantisymm_SubObj_rel (c : C) : isantisymm (SubObj_rel c).
 Proof.
-unfold isantisymm; simpl.
+unfold isantisymm.
+simpl.
 assert (int : ∏ (x1 x2 : setquot (iso_eqrel (SubobjectsPrecategory hsC c))),
               isaprop (SubObj_rel c x1 x2 → SubObj_rel c x2 x1 -> x1 = x2)).
 { intros x1 x2.
@@ -206,6 +208,58 @@ Qed.
 Definition SubObjPoset (c : C) : Poset :=
   (SubObj c,,SubObj_rel c,,ispreorder_SubObj_rel c,,isantisymm_SubObj_rel c).
 
+Definition meetSubObj (c : C) (PC : Pullbacks C) : binop (SubObj c).
+Proof.
+use setquotuniv2.
++ (* intros [[x []] [f Hf]] [[y []] [g Hg]]. *)
+  intros f g.
+  apply setquotpr.
+  exists (PullbackObject (PC _ _ _ (pr1 (pr2 f)) (pr1 (pr2 g))),,tt).
+  exists (PullbackPr1 _ · pr1 (pr2 f)).
+  abstract (apply isMonic_comp; [ apply MonicPullbackisMonic' | apply (pr2 (pr2 f)) ]).
++ intros [x1 x2] y z w h1 h2.
+  Search isMonic PullbackPr1.
+  apply iscompsetquotpr.
+  generalize h1; clear h1; apply hinhuniv; intros h1.
+  generalize h2; clear h2; apply hinhuniv; intros h2.
+  intros H X; apply X; clear H X. (* TODO: prove a general lemma for this *)
+  simpl in *.
+  Search is_iso "slice".
+  mkpair.
+- simpl.
+  mkpair.
+  simpl.
+  mkpair.
+  simpl.
+  About from_Pullback_to_Pullback.
+  Search Pullback iso.
+
+
+  use (is_iso_from_is_z_iso). (slice_precat (carrier_of_sub_precategory C (subprecategory_of_monics C hsC))
+       (subprecategory_of_monics_ob C hsC c))).
+  simpl.
+  Searc
+
+  Search setquotpr.
+
+
+  Check
+  Check (PC x).
+
+
+
+
+  use (setquotuniv2 _ (_,,isasetsetquot (iso_eqrel (SubobjectsPrecategory hsC c)))).
+  simpl in *.
+
+About lattice.
+Definition SubObjLattice (c : C) : lattice (SubObj c).
+Proof.
+  use mklattice.
+  -
+
+      mkpair.
+      * mkpair.
 
 (* Definition SubObj (c : C) : UU := ∥ ∑ (af : ∑ (a : C), C⟦a,c⟧), isMonic (pr2 af) ∥. *)
 
