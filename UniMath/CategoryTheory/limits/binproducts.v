@@ -43,10 +43,11 @@ Proof.
 Qed.
 
 Definition BinProductCone (c d : C) :=
-   total2 (fun pp1p2 : total2 (fun p : C => dirprod (p --> c) (p --> d)) =>
+  total2
+    (fun pp1p2 : total2 (fun p : C => dirprod (p --> c) (p --> d)) =>
              isBinProductCone c d (pr1 pp1p2) (pr1 (pr2 pp1p2)) (pr2 (pr2 pp1p2))).
 
-
+∏ ∐
 Definition BinProducts := ∏ (c d : C), BinProductCone c d.
 Definition hasBinProducts := ishinh BinProducts.
 

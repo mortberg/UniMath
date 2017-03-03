@@ -277,32 +277,73 @@ intro n; induction n as [|n IHn]; simpl; [apply isasetunit|].
 apply isaset_dirprod; [ apply setproperty | apply IHn ].
 Qed.
 
+Set Printing Implicit.
+Unset Printing Notations.
+
+Opaque id.
+
+Goal id (nat -> nat).
+refine (fun n => _).
+Abort.
+
 Definition to_List (A : HSET) : list (pr1 A) -> List A.
 Proof.
 intros l.
-destruct l as [n l].
+induction l as [n l].
 induction n as [|n IHn].
 + exact (nil A).
-+ apply (cons _ (pr1 l) (IHn (pr2 l))).
++ apply (cons A (pr1 l) (IHn (pr2 l))).
 Defined.
-
+Print to_List.
+About "⨿".
+Ltac done := trivial; hnf; intros; solve [ repeat ([solve [trivial | apply: sym_equal; trivial] | discriminate | contradiction | split]) | match goal with H : ¬ _ |- _ ⇒ solve [case H; trivial] end ].
 Definition to_list (A : HSET) : List A -> list (pr1 A).
 Proof.
-apply (foldr A (list (pr1 A),,isaset_list A)).
-* apply (0,,tt).
-* intros a L; simpl in *.
-  apply (tpair _ (S (pr1 L)) (a,,pr2 L)).
+refine (foldr A (list (pr1 A),,isaset_list A) _ _).
+* exact (0,,tt).
+* intros a L.
+  exact (tpair _ (S (pr1 L)) (a,,pr2 L)).
 Defined.
-
+Print to_list.
+(* Unset Printing Notations. *)
+Print to_list.
+About iterprod.
 Lemma to_listK (A : HSET) : ∏ x : list (pr1 A), to_list A (to_List A x) = x.
 Proof.
-intro l; destruct l as [n l]; unfold to_list, to_List.
-induction n as [|n IHn]; simpl.
+Set Printing Implicit.
+Unset Printing Notations.
+intro l; destruct l as [n l]. ; unfold to_list, to_List.
+induction n as [|n IHn].
 - rewrite foldr_nil.
   now destruct l.
-- rewrite foldr_cons; simpl.
-  now rewrite IHn; simpl; rewrite <- (tppr l).
+- simpl. rewrite foldr_cons.
+  simpl in IHn.
+  rewrite IHn.
+  simpl.
+  Unset Printing Notations.
+
+
+  cbn in l.
+  unfold dirprod in l.
+  change (nat_rect _ _ _ _) with (iterprod n (pr1 A)) in l.
+  set (H := !(tppr l)).
+  Set Printing All.
+  rewrite H.
+  rewrite (!H).
+  rewrite <- (tppr l).
+
+
+  Check (l : total2 _).
+  simpl in l.
+  rewrite (tppr l).
+  sipl.
+  apply (!tppr).
+  rewrite <- (tppr l).
+  rewrite IHn. ; simpl; rewrite <- (tppr l).
 Qed.
+
+
+Print to_List.
 
 Lemma to_ListK (A : HSET) : ∏ y : List A, to_List A (to_list A y) = y.
 Proof.
