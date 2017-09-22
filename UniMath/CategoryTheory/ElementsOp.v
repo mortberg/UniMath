@@ -210,3 +210,40 @@ split; apply cat_of_elems_mor_eq; [ exact (pr1 j) | exact (pr2 j) ].
 Qed.
 
 End cat_of_elems_theory.
+
+(** Define restriction of a presheaf by a predicate on its category of elements *)
+Section Presheaf_restr.
+
+Context {C : precategory} (F : C^op ⟶ HSET).
+
+Notation "∫ X" := (cat_of_elems X) (at level 3) : cat.
+
+Context (P : ∫ F → hProp).
+
+(* Assume that P is stable under renaming *)
+Context (H : ∏ (I J : C) (f : C⟦J,I⟧) (ρ : F I : hSet), P (I,,ρ) → P (J,,# F f ρ)).
+
+Definition Preheaf_restr : C^op ⟶ HSET.
+Proof.
+use mk_functor.
+- mkpair.
+  + simpl; intros I.
+    use total2_hSet.
+    * apply (F I).
+    * intros ρ.
+      apply (hProp_to_hSet (P (I,,ρ))).
+  + simpl; intros I J f [ρ p].
+    exists (# F f ρ).
+    now apply H, p.
+- split.
+  + intros I; apply funextfun; intros [ρ p]; simpl in *.
+    apply subtypeEquality; simpl.
+    * intros HH; apply propproperty.
+    * exact (eqtohomot (functor_id F I) ρ).
+  + intros I J K f g; apply funextfun; intros [ρ p]; simpl in *.
+    apply subtypeEquality; simpl.
+    * intros HH; apply propproperty.
+    * exact (eqtohomot (functor_comp F f g) ρ).
+Defined.
+
+End Presheaf_restr.
