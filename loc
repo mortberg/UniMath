@@ -7,11 +7,11 @@ FILES="UniMath/CategoryTheory/CocontFunctors.v
        UniMath/CategoryTheory/Inductives/LambdaCalculus.v
        UniMath/CategoryTheory/Inductives/Lists.v
        UniMath/CategoryTheory/Inductives/Trees.v
-       UniMath/CategoryTheory/Monads.v
-       UniMath/CategoryTheory/ProductPrecategory.v
+       UniMath/CategoryTheory/Monads/Monads.v
+       UniMath/CategoryTheory/ProductCategory.v
        UniMath/CategoryTheory/RightKanExtension.v
-       UniMath/CategoryTheory/category_hset.v
-       UniMath/CategoryTheory/category_hset_structures.v
+       UniMath/CategoryTheory/categories/category_hset.v
+       UniMath/CategoryTheory/categories/category_hset_structures.v
        UniMath/CategoryTheory/covyoneda.v
        UniMath/CategoryTheory/limits/bincoproducts.v
        UniMath/CategoryTheory/limits/binproducts.v
@@ -20,7 +20,7 @@ FILES="UniMath/CategoryTheory/CocontFunctors.v
        UniMath/CategoryTheory/limits/graphs/colimits.v
        UniMath/CategoryTheory/limits/graphs/limits.v
        UniMath/CategoryTheory/limits/products.v
-       UniMath/Foundations/Combinatorics/Lists.v
+       UniMath/Combinatorics/Lists.v
        UniMath/SubstitutionSystems/BinProductOfSignatures.v
        UniMath/SubstitutionSystems/BindingSigToMonad.v
        UniMath/SubstitutionSystems/LamFromBindingSig.v
