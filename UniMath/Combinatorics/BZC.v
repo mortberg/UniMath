@@ -26,28 +26,84 @@ Require Export UniMath.Combinatorics.ZFstructures.
 (** We restrict to types with decidable equalities and translate some lemmas to this
     setting **)
 
-Definition ZFSde : UU := ∑ (x : ZFS), isdeceq x.
-Definition pr1ZFSde (x : ZFSde) : ZFS := pr1 x.
-Coercion pr1ZFSde : ZFSde >-> ZFS.
+Definition ZFSde : UU := preZFS.
+                           (*∑ (x : preZFS), isdeceq x.*)
+Definition pr1ZFSde (x : ZFSde) : hSet := pr111 x.
+Coercion pr1ZFSde : ZFSde >-> hSet.
 
-Lemma isaset_ZFSde : isaset ZFSde.
+
+
+Definition isaset_ZFSde : isaset ZFSde.
 Proof.
 Admitted.
 
+(*
+Lemma isdeceq_Branch (T : preZFS) (x : T) : isdeceq (Branch T x).
+Proof.
+Admitted.
+*)
+
+
+Local Notation "T ↑ x" := (Branch T x)(at level 40).
+
+Local Notation "x ⊏ y" := ((pr121 (pr111 _)) x y)(at level 50).
+
+
+Definition Root (X : ZFSde) := pr122 (pr11 X).
+
+
+Definition isapoint {X : ZFSde} (x : X) := ¬ (x = Root X).
+
+Lemma isaprop_isapoint {X : ZFSde} (x : X) : isaprop (isapoint x).
+Proof.
+  apply impred.
+  intros.
+  apply isapropempty.
+Qed.
+
+Definition ZFSde_elementof (x y : ZFSde) := ∑ (a : y), (isapoint a) × (x = y ↑ a).
+
+Lemma isaprop_ZFSde_elementof (X Y : ZFSde) : isaprop (ZFSde_elementof X Y).
+Proof.
+  apply invproofirrelevance.
+  unfold isProofIrrelevant.
+  intros z w.
+  unfold ZFSde_elementof in z.
+  unfold ZFSde_elementof in w.
+  destruct z as [z [ ispp p]].
+  destruct w as [w [ ispq q]].
+  set (r := (! q) @ p).
+  apply total2_paths_equiv in r.
+  destruct r as [r ρ].
+  Admitted.
+  (*
+  set (s := (pr2 Y w z r)).
+  simpl in ρ.
+  set (τ y := @isapropdirprod _ _ (isaprop_isapoint y) (isaset_ZFS X (Y ↑ y))).
+  set (P := λ y : Y, (isapoint y × X = Y ↑ y) ,, τ y).
+  apply (total2_paths_hProp_equiv P (z,, (ispp,, p)) (w,, (ispq,, q))).
+  simpl.
+  apply (! s).
+Qed.
+*)
+
+Local Notation "x ∈ y" := (ZFSde_elementof x y)(at level 30).
+
+(*
 Theorem ZFS_univalence (X Y : ZFS) : (X = Y) ≃ (preZFS_iso X Y).
 Proof.
   set (P := λ x, λ y, preZFS_univalence x y).
   set (Q := λ (x : preZFS), (hasuniquerepbranch x ,, isaprop_hasuniquerepbranch x)).
   exact (substructure_univalence _ _ P Q X Y).
-Qed.
+Qed.*)
 
 Theorem ZFSde_univalence (X Y : ZFSde) : (X = Y) ≃ (preZFS_iso X Y).
 Proof.
-  set (P := λ x, λ y, ZFS_univalence x y).
-  set (Q := λ (x : ZFS), (isdeceq x ,, isapropisdeceq x)).
-  exact (substructure_univalence _ _ P Q X Y).
+  set (P := λ x, λ y, preZFS_univalence x y).
+  exact (P X Y).
 Qed.
 
+(*
 Definition ZFS_elementof_hProp (x y : ZFSde) : hProp :=
   (ZFS_elementof x y ,, isaprop_ZFS_elementof x y).
 
@@ -67,8 +123,7 @@ Theorem LEM_weqpreZFSZFS : LEM -> preZFS ≃ ZFS.
 Proof.
   (*TODO*)
 Admitted.
-
-≅
+*)
 
 (*** Axiom of Extensionality ***)
 
@@ -81,8 +136,8 @@ Proof.
   apply isapropdirprod.
   - apply impred. intros. apply isaset_ZFSde.
   - repeat (apply impred ; intros). apply isapropdirprod.
-    -- apply impred. intros. apply isaprop_ZFS_elementof.
-    -- apply impred. intros. apply isaprop_ZFS_elementof.
+    -- apply impred. intros. apply isaprop_ZFSde_elementof.
+    -- apply impred. intros. apply isaprop_ZFSde_elementof.
 Qed.
 
 Lemma ZFSisitselements (x : ZFSde) : (∑ (z : ZFSde), z ∈ x) = x.
@@ -90,12 +145,99 @@ Proof.
   apply univalence.
 Admitted.
 
-
-Theorem RZC_extensionality : ∏ (x y : ZFSde), (∏ z : ZFSde, z ∈ x <-> z ∈ y) <-> x = y.
+(* todo: upstream *)
+Lemma branch_elem (x : ZFSde) (a : x) : isapoint a → (x ↑ a) ∈ x.
 Proof.
-  intros.
+  intros H.
+  now apply (tpair _ a).
+Defined.
+
+Definition elem2elem (Heq : ∏ x : ZFSde, isdeceq x)
+  (x y : ZFSde) (f : ∏ z : ZFSde, z ∈ x -> z ∈ y) :
+  pr111 x → pr111 y.
+Proof.
+  intros a.
+  induction (Heq x a (Root x)) as [_|Ha].
+  { exact (Root y). }
+  { exact (pr1 (f (x ↑ a) (branch_elem x a Ha))). }
+Defined.
+
+Lemma elem2elem_Root (Heq : ∏ x : ZFSde, isdeceq x)
+  (x y : ZFSde) (f : ∏ z : ZFSde, z ∈ x -> z ∈ y) :
+  elem2elem Heq x y f (Root x) = Root y.
+Proof.
+  now unfold elem2elem; induction (Heq x (Root x) (Root x)).
+Qed.
+
+
+Lemma elem2elem_nonRoot (Heq : ∏ x : ZFSde, isdeceq x)
+      (x y : ZFSde) (f : ∏ z : ZFSde, z ∈ x -> z ∈ y)
+      (a : x) (Ha : isapoint a) :
+  elem2elem Heq x y f a = pr1 (f (x ↑ a) (branch_elem _ _ Ha)).
+Proof.
+  unfold elem2elem.
+  induction (Heq x a (Root x)) as [H1|H1].
+unfold isapoint in Ha.
+  generalize Ha. rewrite H1.
+simpl.
+intros HH.
+induction (HH (idpath _)).
+cbn.
+repeat apply maponpaths.
+apply isapropneg.
+Qed.
+
+
+Lemma hasuniquerepbranch_eq (x : ZFSde) (a b : x) : x ↑ a = x ↑ b → a = b.
+Admitted.
+
+Theorem RZC_extensionality (Heq : ∏ (x : ZFSde), isdeceq x) (x y : ZFSde) :
+  (∏ z : ZFSde, z ∈ x <-> z ∈ y) <-> x = y.
+Proof.
   split.
-  - intros.  admit.
+  - intros H.
+    apply (invweq (ZFSde_univalence x y)).
+    use tpair.
+    + use weq_iso.
+      * apply (elem2elem Heq x y (λ z, pr1 (H z))).
+      * apply (elem2elem Heq y x (λ z, pr2 (H z))).
+      *
+        intros a.
+        induction (Heq x a (Root x)) as [Hxa|Hxa].
+        { now rewrite Hxa, !elem2elem_Root. }
+        {
+          set (z := branch_elem _ _ Hxa).
+          set (b := elem2elem Heq x y (λ z, pr1 (H z)) a).
+assert (p : x ↑ a = y ↑ b).
+{ unfold b.
+rewrite (elem2elem_nonRoot Heq x y (λ z : ZFSde, pr1 (H z)) a Hxa).
+apply (pr22 (pr1 (H (x ↑ a)) z)).
+}
+unfold elem2elem.
+induction (Heq _ _ _).
+simpl.
+assert (isapoint b).
+unfold b.
+rewrite (elem2elem_nonRoot Heq x y (λ z : ZFSde, pr1 (H z)) a Hxa).
+apply (pr12 (pr1 (H (x ↑ a)) z)).
+unfold isapoint in X.
+induction (X a0).
+
+set (w := branch_elem _ _ b0 : (y ↑ b) ∈ y).
+
+simpl.
+set (c := pr1 (pr2 (H (y ↑ b)) w)).
+assert (q : y ↑ b = x ↑ c).
+
+apply ((pr22 (pr2 (H (y ↑ b)) w))).
+set (pq := p @ q).
+apply (!hasuniquerepbranch_eq _ _ _ pq).
+}
+
+
+simpl in H.
+  simpl.
+    admit.
   - intros p. induction p. intros. split.
     -- repeat (intros P ; apply P).
     -- repeat (intros P ; apply P).
@@ -140,14 +282,17 @@ Proof.
   (*TODO*)
 Admitted.
 
-Definition unitpreZFS := (unitTree ,, isapreZFS_unitTRRG).
+Definition preemptyset : preZFS := (unitTree ,, isapreZFS_unitTRRG).
 
+(*
 Lemma unitZFShasuniquerepbranch : hasuniquerepbranch unitpreZFS.
 Proof.
   (*TODO*)
 Admitted.
-
+*)
+(*
 Definition preemptyset : ZFS := (unitpreZFS ,, unitZFShasuniquerepbranch).
+*)
 
 Lemma isdeceq_preemptyset : isdeceq preemptyset.
 Proof.
@@ -172,28 +317,28 @@ Qed.
 
 (*Axiom of Pairing*)
 
-Definition RZC_pair_statement := ∏ (x y : ZF_Structures), ∑ (z : ZF_Structures), ∏ (t : ZF_Structures), t ∈ z <-> ((t = x) ⨿ (t = y)).
+Definition RZC_pair_statement := ∏ (x y : ZFSde), ∑ (z : ZFSde), ∏ (t : ZFSde), t ∈ z <-> ((t = x) ⨿ (t = y)).
 
 Lemma isaprop_RZC_pair : isaprop RZC_pair_statement.
 Proof.
   (*TODO*)
 Admitted.
 
-Theorem RZC_pair : ∏ (x y : ZF_Structures), ∑ (z : ZF_Structures), ∏ (t : ZF_Structures), t ∈ z <-> ((t = x) ⨿ (t = y)).
+Theorem RZC_pair : ∏ (x y : ZFSde), ∑ (z : ZFSde), ∏ (t : ZFSde), t ∈ z <-> ((t = x) ⨿ (t = y)).
 Proof.
   (*TODO*)
 Admitted.
 
 (*Axiom of Union*)
 
-Definition RZC_union_statement := ∏ (x : ZF_Structures), ∑ (u : ZF_Structures), ∏ (z : ZF_Structures), z ∈ u <-> ( ∑ t : ZF_Structures, z ∈ t × t ∈ x).
+Definition RZC_union_statement := ∏ (x : ZFSde), ∑ (u : ZFSde), ∏ (z : ZFSde), z ∈ u <-> ( ∑ t : ZFSde, z ∈ t × t ∈ x).
 
 Lemma isaprop_RZC_union : isaprop RZC_union_statement.
 Proof.
   (*TODO*)
 Admitted.
 
-Theorem RZC_union : ∏ (x : ZF_Structures), ∑ (u : ZF_Structures), ∏ (z : ZF_Structures), z ∈ u <-> ( ∑ t : ZF_Structures, z ∈ t × t ∈ x).
+Theorem RZC_union : ∏ (x : ZFSde), ∑ (u : ZFSde), ∏ (z : ZFSde), z ∈ u <-> ( ∑ t : ZFSde, z ∈ t × t ∈ x).
 Proof.
   (*TODO*)
 Admitted.
@@ -201,23 +346,35 @@ Admitted.
 
 (*Axiom of Powerset*)
 
-Definition ZFS_subset (x y : ZF_Structures) := ∏ (z : ZF_Structures), z ∈ x → z ∈ y.
+Definition ZFSde_subset (x y : ZFSde) := ∏ (z : ZFSde), z ∈ x → z ∈ y.
 
-Local Notation "x ⊆ y" := (ZFS_subset x y)(at level 90).
+Local Notation "x ⊆ y" := (ZFSde_subset x y)(at level 90).
 
-Definition RZC_poweset_statement := ∏ (x : ZF_Structures), ∑ (v : ZF_Structures), ∏ (t : ZF_Structures), t ∈ v <-> t ⊆ x.
+Definition RZC_poweset_statement := ∏ (x : ZFSde), ∑ (v : ZFSde), ∏ (t : ZFSde), t ∈ v <-> t ⊆ x.
 
 Lemma isaprop_RZC_powerset : isaprop RZC_pair_statement.
 Proof.
   (*TODO*)
 Admitted.
 
-Theorem RZC_powerset : ∏ (x : ZF_Structures), ∑ (v : ZF_Structures), ∏ (t : ZF_Structures), t ∈ v <-> t ⊆ x.
+Theorem RZC_powerset : ∏ (x : ZFSde), ∑ (v : ZFSde), ∏ (t : ZFSde), t ∈ v <-> t ⊆ x.
 Proof.
   (*TODO*)
 Admitted.
 
 (*Axiom of Foundation*)
+
+Definition RZC_poweset_statement := ∏ (x : ZFSde), ∑ (v : ZFSde), ∏ (t : ZFSde), t ∈ v <-> t ⊆ x.
+
+Lemma isaprop_RZC_powerset : isaprop RZC_pair_statement.
+Proof.
+  (*TODO*)
+Admitted.
+
+Theorem RZC_powerset : ∏ (x : ZFSde), ∑ (v : ZFSde), ∏ (t : ZFSde), t ∈ v <-> t ⊆ x.
+Proof.
+  (*TODO*)
+Admitted.
 
 
 (*Axiom of Infinity*)
@@ -226,9 +383,23 @@ Admitted.
 (*Axiom of Choice*)
 
 
-(*Axiom of Bounded Separation*)
+(*Axiom of Comprehension*)
+
+Definition ZF_comprehension_statement := ∏ (φ : ZFSde → hProp) (x : ZFSde), ∑ (s : ZFSde), ∏ (t : ZFSde), (s ⊆ x) × (t ∈ s <-> φ t).
+
+(** REMARK: The below lemma requires propositional resizing if ZFSde is to remain in the same universe, which we want it to. So at this point, for this form of the comprehension axiom, propositional resizing will be used essentially. **)
+
+Lemma isaprop_ZF_comprehension_statement : isaprop ZF_comprehension_statement.
+Proof.
+  (*TODO*)
+Admitted.
+
+Theorem ZF_comprehension : ∏ (φ : ZFSde → hProp) (x : ZFSde), ∑ (s : ZFSde), ∏ (t : ZFSde), (s ⊆ x) × (t ∈ s <-> φ t).
+Proof.
+  (*TODO*)
+Admitted.
 
 
 (*Axiom of Replacement*)
 
-(* Unclear, yet, if this can work. If it does, then we get a lot more consistency strength, and there is no need for separation, which follows as a consequence.*)
+(* Unclear, yet, if this can work. If it does, then we get a lot more consistency strength, and there is no need for separation, which follows as a consequence. On the other hand, with replacement, we get full ZFC, which makes me skeptial that it can work.*)
