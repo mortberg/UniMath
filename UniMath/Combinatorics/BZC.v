@@ -127,7 +127,7 @@ Admitted.
 
 (*** Axiom of Extensionality ***)
 
-Definition RZC_extensionality_statement :=
+Definition RZC_extensionality_statement : UU :=
   ∏ (x y : ZFSde), (∏ z : ZFSde, z ∈ x <-> z ∈ y) <-> x = y.
 
 Lemma isaprop_RZC_extensionality : isaprop RZC_extensionality_statement.
@@ -146,15 +146,11 @@ Proof.
 Admitted.
 
 (* todo: upstream *)
-Lemma branch_elem (x : ZFSde) (a : x) : isapoint a → (x ↑ a) ∈ x.
-Proof.
-  intros H.
-  now apply (tpair _ a).
-Defined.
+Definition branch_elem (x : ZFSde) (a : x) (H : isapoint a) : (x ↑ a) ∈ x :=
+ (a,,(H,,idpath _)).
 
 Definition elem2elem (Heq : ∏ x : ZFSde, isdeceq x)
-  (x y : ZFSde) (f : ∏ z : ZFSde, z ∈ x -> z ∈ y) :
-  pr111 x → pr111 y.
+  (x y : ZFSde) (f : ∏ z : ZFSde, z ∈ x -> z ∈ y) : x → y.
 Proof.
   intros a.
   induction (Heq x a (Root x)) as [_|Ha].
@@ -169,27 +165,49 @@ Proof.
   now unfold elem2elem; induction (Heq x (Root x) (Root x)).
 Qed.
 
-
+(* todo: add a projection to avoid the pr1? *)
 Lemma elem2elem_nonRoot (Heq : ∏ x : ZFSde, isdeceq x)
       (x y : ZFSde) (f : ∏ z : ZFSde, z ∈ x -> z ∈ y)
       (a : x) (Ha : isapoint a) :
   elem2elem Heq x y f a = pr1 (f (x ↑ a) (branch_elem _ _ Ha)).
 Proof.
   unfold elem2elem.
-  induction (Heq x a (Root x)) as [H1|H1].
-unfold isapoint in Ha.
-  generalize Ha. rewrite H1.
-simpl.
-intros HH.
-induction (HH (idpath _)).
-cbn.
-repeat apply maponpaths.
-apply isapropneg.
+  induction (Heq x a (Root x)) as [H1|H1]; simpl.
+  - induction (transportf isapoint H1 Ha (idpath _)).
+  - repeat apply maponpaths; apply isapropneg.
 Qed.
 
-
+(* todo: extract this from the structure *)
 Lemma hasuniquerepbranch_eq (x : ZFSde) (a b : x) : x ↑ a = x ↑ b → a = b.
 Admitted.
+
+Lemma elem2elem_cancel (Heq : ∏ (x : ZFSde), isdeceq x) (x y : ZFSde)
+      (f : ∏ z : ZFSde, z ∈ x -> z ∈ y)
+      (g : ∏ z : ZFSde, z ∈ y -> z ∈ x) (a : x) :
+  elem2elem Heq y x g (elem2elem Heq x y f a) = a.
+Proof.
+induction (Heq x a (Root x)) as [Hxa|Hxa].
+- now rewrite Hxa, !elem2elem_Root.
+- set (z := branch_elem _ _ Hxa).
+  set (b := elem2elem Heq x y f a).
+  assert (p : x ↑ a = y ↑ b).
+  { unfold b.
+    rewrite (elem2elem_nonRoot Heq x y f a Hxa).
+    apply (f (x ↑ a) z). }
+  unfold elem2elem.
+  induction (Heq _ _ _) as [H1|H1]; simpl.
+  + assert (Hb : isapoint b).
+    { unfold b.
+      rewrite (elem2elem_nonRoot Heq x y f a Hxa).
+      apply (f (x ↑ a) z). }
+    induction (Hb H1).
+  + set (w := branch_elem _ _ H1 : (y ↑ b) ∈ y).
+    set (c := pr1 (g (y ↑ b) w)).
+    assert (q : y ↑ b = x ↑ c).
+    { apply (g (y ↑ b) w). }
+    set (pq := p @ q).
+    apply (!hasuniquerepbranch_eq _ _ _ pq).
+Qed.
 
 Theorem RZC_extensionality (Heq : ∏ (x : ZFSde), isdeceq x) (x y : ZFSde) :
   (∏ z : ZFSde, z ∈ x <-> z ∈ y) <-> x = y.
@@ -201,46 +219,10 @@ Proof.
     + use weq_iso.
       * apply (elem2elem Heq x y (λ z, pr1 (H z))).
       * apply (elem2elem Heq y x (λ z, pr2 (H z))).
-      *
-        intros a.
-        induction (Heq x a (Root x)) as [Hxa|Hxa].
-        { now rewrite Hxa, !elem2elem_Root. }
-        {
-          set (z := branch_elem _ _ Hxa).
-          set (b := elem2elem Heq x y (λ z, pr1 (H z)) a).
-assert (p : x ↑ a = y ↑ b).
-{ unfold b.
-rewrite (elem2elem_nonRoot Heq x y (λ z : ZFSde, pr1 (H z)) a Hxa).
-apply (pr22 (pr1 (H (x ↑ a)) z)).
-}
-unfold elem2elem.
-induction (Heq _ _ _).
-simpl.
-assert (isapoint b).
-unfold b.
-rewrite (elem2elem_nonRoot Heq x y (λ z : ZFSde, pr1 (H z)) a Hxa).
-apply (pr12 (pr1 (H (x ↑ a)) z)).
-unfold isapoint in X.
-induction (X a0).
-
-set (w := branch_elem _ _ b0 : (y ↑ b) ∈ y).
-
-simpl.
-set (c := pr1 (pr2 (H (y ↑ b)) w)).
-assert (q : y ↑ b = x ↑ c).
-
-apply ((pr22 (pr2 (H (y ↑ b)) w))).
-set (pq := p @ q).
-apply (!hasuniquerepbranch_eq _ _ _ pq).
-}
-
-
-simpl in H.
-  simpl.
-    admit.
-  - intros p. induction p. intros. split.
-    -- repeat (intros P ; apply P).
-    -- repeat (intros P ; apply P).
+      * apply (elem2elem_cancel Heq).
+      * apply (elem2elem_cancel Heq).
+    + simpl. admit.
+  - now intros p; induction p.
 Admitted.
 
 (*** Axiom of the Empty Set ***)
