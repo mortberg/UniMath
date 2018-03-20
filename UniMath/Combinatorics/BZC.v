@@ -23,8 +23,28 @@ Require Import UniMath.MoreFoundations.Propositions.
 Require Export UniMath.Combinatorics.ZFstructures.
 
 
-(** We restrict to types with decidable equalities and translate some lemmas to this
-    setting **)
+(*** LEMmas ***)
+
+(** Some lemmas assuming LEM which will probably make proofs easier when LEM is assumed **)
+
+Lemma LEM_isrigidiffissuperrigid (T : Tree) : LEM -> (isrigid T <-> issuperrigid T).
+Proof.
+  (*TODO*)
+Admitted.
+
+Lemma LEM_hasuniquerepbranch (x : preZFS) : LEM -> hasuniquerepbranch x.
+Proof.
+  (*TODO*)
+Admitted.
+
+Theorem LEM_weqpreZFSZFS : LEM -> preZFS ≃ ZFS.
+Proof.
+  intros lem.
+Admitted.
+
+(*** ***)
+
+(*** Set-up and Notation ***)
 
 Definition ZFSde : UU := preZFS.
                            (*∑ (x : preZFS), isdeceq x.*)
@@ -50,7 +70,6 @@ Local Notation "x ⊏ y" := ((pr121 (pr111 _)) x y)(at level 50).
 
 
 Definition Root (X : ZFSde) := pr122 (pr11 X).
-
 
 Definition isapoint {X : ZFSde} (x : X) := ¬ (x = Root X).
 
@@ -103,27 +122,8 @@ Proof.
   exact (P X Y).
 Qed.
 
-(*
-Definition ZFS_elementof_hProp (x y : ZFSde) : hProp :=
-  (ZFS_elementof x y ,, isaprop_ZFS_elementof x y).
+(*** ***)
 
-Local Notation "x ∈ y" := (ZFS_elementof_hProp x y)(at level 30).
-
-Lemma LEM_isrigidiffissuperrigid (T : Tree) : LEM -> (isrigid T <-> issuperrigid T).
-Proof.
-  (*TODO*)
-Admitted.
-
-Lemma LEM_hasuniquerepbranch (x : preZFS) : LEM -> hasuniquerepbranch x.
-Proof.
-  (*TODO*)
-Admitted.
-
-Theorem LEM_weqpreZFSZFS : LEM -> preZFS ≃ ZFS.
-Proof.
-  (*TODO*)
-Admitted.
-*)
 
 (*** Axiom of Extensionality ***)
 
